@@ -399,7 +399,6 @@ tr:hover td{background:var(--card2)}
   <div class="tabs" id="input-tabs" style="margin-bottom:20px">
     <button class="tab active" onclick="setInputTab('monthly-input',this)">月別採用データ</button>
     <button class="tab" onclick="setInputTab('media-input',this)">媒体KPIデータ</button>
-    <button class="tab" onclick="setInputTab('budget-input',this)">予算データ</button>
     <button class="tab" onclick="setInputTab('interviewer-input',this)">面接官データ</button>
   </div>
 
@@ -462,19 +461,7 @@ tr:hover td{background:var(--card2)}
     </div>
   </div>
 
-  <!-- BUDGET INPUT -->
-  <div id="budget-input" style="display:none">
-    <div class="card" style="margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem">予算明細データ <span style="color:var(--t3)">（計画・実績・予測を入力）</span></div>
-        <button class="btn btn-outline-cyan" onclick="saveBudgetInput()" style="font-size:.75rem;padding:7px 14px">✓ 保存してダッシュボードに反映</button>
-      </div>
-      <div id="budget-input-rows"></div>
-      <button onclick="addBudgetRow()" style="margin-top:14px;background:transparent;border:1px dashed var(--border);color:var(--t2);padding:9px 16px;border-radius:7px;cursor:pointer;font-size:.78rem;width:100%;transition:all .2s" onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t2)'">
-        ＋ 予算項目を追加
-      </button>
-    </div>
-  </div>
+
 
   <!-- INTERVIEWER INPUT -->
   <div id="interviewer-input" style="display:none">
@@ -938,18 +925,18 @@ const METRICS = [
 ];
 
 const MONTHLY = [
-  {month:'9月', applications:189,documentPass:113,firstInterview:92,firstPass:69,secondInterview:61,secondPass:43,offers:37,acceptances:32},
-  {month:'10月',applications:212,documentPass:127,firstInterview:103,firstPass:77,secondInterview:68,secondPass:48,offers:42,acceptances:37},
-  {month:'11月',applications:178,documentPass:107,firstInterview:88,firstPass:66,secondInterview:58,secondPass:41,offers:36,acceptances:31},
-  {month:'12月',applications:143,documentPass:86,firstInterview:70,firstPass:52,secondInterview:46,secondPass:32,offers:28,acceptances:24},
-  {month:'1月', applications:201,documentPass:121,firstInterview:98,firstPass:73,secondInterview:65,secondPass:46,offers:40,acceptances:35},
-  {month:'2月', applications:234,documentPass:140,firstInterview:114,firstPass:85,secondInterview:75,secondPass:53,offers:47,acceptances:41},
-  {month:'3月', applications:267,documentPass:160,firstInterview:130,firstPass:97,secondInterview:86,secondPass:61,offers:54,acceptances:47},
-  {month:'4月', applications:145,documentPass:87,firstInterview:72,firstPass:54,secondInterview:48,secondPass:32,offers:28,acceptances:24},
-  {month:'5月', applications:198,documentPass:118,firstInterview:95,firstPass:71,secondInterview:63,secondPass:44,offers:38,acceptances:33},
-  {month:'6月', applications:223,documentPass:134,firstInterview:108,firstPass:82,secondInterview:71,secondPass:52,offers:46,acceptances:40},
-  {month:'7月', applications:167,documentPass:101,firstInterview:84,firstPass:63,secondInterview:55,secondPass:38,offers:34,acceptances:29},
-  {month:'8月', applications:134,documentPass:80,firstInterview:66,firstPass:49,secondInterview:43,secondPass:30,offers:26,acceptances:22},
+  {month:'9月', applications:189,documentPass:113,firstInterview:92,firstPass:69,secondInterview:61,secondPass:43,offers:37,acceptances:32,agentCost:0,mediaCost:0},
+  {month:'10月',applications:212,documentPass:127,firstInterview:103,firstPass:77,secondInterview:68,secondPass:48,offers:42,acceptances:37,agentCost:0,mediaCost:0},
+  {month:'11月',applications:178,documentPass:107,firstInterview:88,firstPass:66,secondInterview:58,secondPass:41,offers:36,acceptances:31,agentCost:0,mediaCost:0},
+  {month:'12月',applications:143,documentPass:86,firstInterview:70,firstPass:52,secondInterview:46,secondPass:32,offers:28,acceptances:24,agentCost:0,mediaCost:0},
+  {month:'1月', applications:201,documentPass:121,firstInterview:98,firstPass:73,secondInterview:65,secondPass:46,offers:40,acceptances:35,agentCost:0,mediaCost:0},
+  {month:'2月', applications:234,documentPass:140,firstInterview:114,firstPass:85,secondInterview:75,secondPass:53,offers:47,acceptances:41,agentCost:0,mediaCost:0},
+  {month:'3月', applications:267,documentPass:160,firstInterview:130,firstPass:97,secondInterview:86,secondPass:61,offers:54,acceptances:47,agentCost:0,mediaCost:0},
+  {month:'4月', applications:145,documentPass:87,firstInterview:72,firstPass:54,secondInterview:48,secondPass:32,offers:28,acceptances:24,agentCost:0,mediaCost:0},
+  {month:'5月', applications:198,documentPass:118,firstInterview:95,firstPass:71,secondInterview:63,secondPass:44,offers:38,acceptances:33,agentCost:0,mediaCost:0},
+  {month:'6月', applications:223,documentPass:134,firstInterview:108,firstPass:82,secondInterview:71,secondPass:52,offers:46,acceptances:40,agentCost:0,mediaCost:0},
+  {month:'7月', applications:167,documentPass:101,firstInterview:84,firstPass:63,secondInterview:55,secondPass:38,offers:34,acceptances:29,agentCost:0,mediaCost:0},
+  {month:'8月', applications:134,documentPass:80,firstInterview:66,firstPass:49,secondInterview:43,secondPass:30,offers:26,acceptances:22,agentCost:0,mediaCost:0},
 ];
 
 const QUARTERLY = [
@@ -961,18 +948,18 @@ const QUARTERLY = [
 
 // 目標値データ（月別）
 let MONTHLY_TARGET = [
-  {month:'9月', applications:190,documentPass:114,firstInterview:93,firstPass:70,secondInterview:62,secondPass:44,offers:38,acceptances:33},
-  {month:'10月',applications:210,documentPass:126,firstInterview:102,firstPass:76,secondInterview:67,secondPass:47,offers:41,acceptances:36},
-  {month:'11月',applications:180,documentPass:108,firstInterview:89,firstPass:67,secondInterview:59,secondPass:42,offers:37,acceptances:32},
-  {month:'12月',applications:145,documentPass:87,firstInterview:71,firstPass:53,secondInterview:47,secondPass:33,offers:29,acceptances:25},
-  {month:'1月', applications:200,documentPass:120,firstInterview:97,firstPass:72,secondInterview:64,secondPass:45,offers:39,acceptances:34},
-  {month:'2月', applications:235,documentPass:141,firstInterview:115,firstPass:86,secondInterview:76,secondPass:54,offers:48,acceptances:42},
-  {month:'3月', applications:265,documentPass:159,firstInterview:129,firstPass:96,secondInterview:85,secondPass:60,offers:53,acceptances:46},
-  {month:'4月', applications:150,documentPass:90,firstInterview:75,firstPass:56,secondInterview:50,secondPass:35,offers:30,acceptances:26},
-  {month:'5月', applications:200,documentPass:120,firstInterview:98,firstPass:73,secondInterview:65,secondPass:46,offers:40,acceptances:35},
-  {month:'6月', applications:220,documentPass:132,firstInterview:107,firstPass:80,secondInterview:70,secondPass:50,offers:44,acceptances:38},
-  {month:'7月', applications:170,documentPass:102,firstInterview:85,firstPass:64,secondInterview:56,secondPass:39,offers:34,acceptances:30},
-  {month:'8月', applications:140,documentPass:84,firstInterview:68,firstPass:51,secondInterview:45,secondPass:32,offers:28,acceptances:24},
+  {month:'9月', applications:190,documentPass:114,firstInterview:93,firstPass:70,secondInterview:62,secondPass:44,offers:38,acceptances:33,agentCost:0,mediaCost:0},
+  {month:'10月',applications:210,documentPass:126,firstInterview:102,firstPass:76,secondInterview:67,secondPass:47,offers:41,acceptances:36,agentCost:0,mediaCost:0},
+  {month:'11月',applications:180,documentPass:108,firstInterview:89,firstPass:67,secondInterview:59,secondPass:42,offers:37,acceptances:32,agentCost:0,mediaCost:0},
+  {month:'12月',applications:145,documentPass:87,firstInterview:71,firstPass:53,secondInterview:47,secondPass:33,offers:29,acceptances:25,agentCost:0,mediaCost:0},
+  {month:'1月', applications:200,documentPass:120,firstInterview:97,firstPass:72,secondInterview:64,secondPass:45,offers:39,acceptances:34,agentCost:0,mediaCost:0},
+  {month:'2月', applications:235,documentPass:141,firstInterview:115,firstPass:86,secondInterview:76,secondPass:54,offers:48,acceptances:42,agentCost:0,mediaCost:0},
+  {month:'3月', applications:265,documentPass:159,firstInterview:129,firstPass:96,secondInterview:85,secondPass:60,offers:53,acceptances:46,agentCost:0,mediaCost:0},
+  {month:'4月', applications:150,documentPass:90,firstInterview:75,firstPass:56,secondInterview:50,secondPass:35,offers:30,acceptances:26,agentCost:0,mediaCost:0},
+  {month:'5月', applications:200,documentPass:120,firstInterview:98,firstPass:73,secondInterview:65,secondPass:46,offers:40,acceptances:35,agentCost:0,mediaCost:0},
+  {month:'6月', applications:220,documentPass:132,firstInterview:107,firstPass:80,secondInterview:70,secondPass:50,offers:44,acceptances:38,agentCost:0,mediaCost:0},
+  {month:'7月', applications:170,documentPass:102,firstInterview:85,firstPass:64,secondInterview:56,secondPass:39,offers:34,acceptances:30,agentCost:0,mediaCost:0},
+  {month:'8月', applications:140,documentPass:84,firstInterview:68,firstPass:51,secondInterview:45,secondPass:32,offers:28,acceptances:24,agentCost:0,mediaCost:0},
 ];
 
 const INTERVIEWERS = [
@@ -3385,12 +3372,11 @@ function showToast(){
 function setInputTab(tab, el){
   document.querySelectorAll('#input-tabs .tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  ['monthly-input','media-input','budget-input','interviewer-input'].forEach(id=>{
+  ['monthly-input','media-input','interviewer-input'].forEach(id=>{
     document.getElementById(id).style.display = id===tab?'block':'none';
   });
   if(tab==='monthly-input') renderMonthlyInput();
   if(tab==='media-input') renderMediaInput();
-  if(tab==='budget-input') renderBudgetInputRows();
   if(tab==='interviewer-input') renderIVInput();
 }
 
@@ -3426,38 +3412,75 @@ function renderMonthlyInput(){
   const accentBg = is22 ? 'rgba(123,97,255,.12)' : 'rgba(255,230,109,.12)';
   const accentBorder = is22 ? 'rgba(123,97,255,.3)' : 'rgba(255,230,109,.3)';
   const periodLabel = is22 ? '22期目標' : '23期目標';
+  // 23期は10月スタート（11ヶ月）、22期は9月スタート（12ヶ月）
+  const rowCount = is22 ? 12 : MONTHLY_TARGET_23.length;
 
   head.innerHTML = `
     <th style="text-align:left;color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem;padding:8px 10px;border-bottom:1px solid var(--border)">月</th>
     <th style="color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem;padding:8px 10px;border-bottom:1px solid var(--border)">種別</th>
     ${labels.map((l,i)=>`<th style="text-align:right;color:${colors[i]};font-family:'Space Mono',monospace;font-size:.62rem;padding:8px 6px;border-bottom:1px solid var(--border)">${l}</th>`).join('')}
+    <th style="text-align:right;color:#FF9F43;font-family:'Space Mono',monospace;font-size:.62rem;padding:8px 6px;border-bottom:1px solid var(--border)">エージェント費</th>
+    <th style="text-align:right;color:#F8A5C2;font-family:'Space Mono',monospace;font-size:.62rem;padding:8px 6px;border-bottom:1px solid var(--border)">媒体費</th>
+    <th style="text-align:right;color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem;padding:8px 6px;border-bottom:1px solid var(--border)">合計費用</th>
   `;
 
-  body.innerHTML = (is22 ? MONTHLY : Array(12).fill(null)).map((row, i)=>{
+  const dataRows = is22 ? MONTHLY : Array(rowCount).fill(null);
+
+  body.innerHTML = dataRows.map((row, i)=>{
+    if(!TARGET[i]) return '';
     const tRow = TARGET[i];
+    const rowspan = is22 ? 2 : 1;
+    const tAgentCost = tRow.agentCost||0;
+    const tMediaCost = tRow.mediaCost||0;
     return `
     <tr style="border-top:2px solid var(--border)">
-      <td rowspan="${is22?2:1}" style="padding:6px 10px;color:var(--t2);font-family:'Space Mono',monospace;font-size:.72rem;vertical-align:middle;border-right:1px solid var(--border)">${tRow.month}</td>
+      <td rowspan="${rowspan}" style="padding:6px 10px;color:var(--t2);font-family:'Space Mono',monospace;font-size:.72rem;vertical-align:middle;border-right:1px solid var(--border)">${tRow.month}</td>
       <td style="padding:4px 8px${is22?'':';border-bottom:1px solid var(--border)'}">
         <span style="background:${accentBg};color:${accentColor};font-family:'Space Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:3px;white-space:nowrap">${periodLabel}</span>
       </td>
       ${keys.map(k=>`
         <td style="padding:3px 4px${is22?'':';border-bottom:1px solid var(--border)'}">
-          <input class="input-field" style="text-align:right;width:76px;border-color:${accentBorder};color:${accentColor}" type="number" min="0"
-            value="${tRow[k]}"
+          <input class="input-field" style="text-align:right;width:72px;border-color:${accentBorder};color:${accentColor}" type="number" min="0"
+            value="${tRow[k]||0}"
             oninput="${is22?`MONTHLY_TARGET`:`MONTHLY_TARGET_23`}[${i}]['${k}']=Number(this.value)||0">
         </td>`).join('')}
+      <td style="padding:3px 4px${is22?'':';border-bottom:1px solid var(--border)'}">
+        <input class="input-field" style="text-align:right;width:88px;border-color:rgba(255,159,67,.3);color:#FF9F43" type="number" min="0"
+          value="${tAgentCost}"
+          oninput="${is22?`MONTHLY_TARGET`:`MONTHLY_TARGET_23`}[${i}].agentCost=Number(this.value)||0">
+      </td>
+      <td style="padding:3px 4px${is22?'':';border-bottom:1px solid var(--border)'}">
+        <input class="input-field" style="text-align:right;width:88px;border-color:rgba(248,165,194,.3);color:#F8A5C2" type="number" min="0"
+          value="${tMediaCost}"
+          oninput="${is22?`MONTHLY_TARGET`:`MONTHLY_TARGET_23`}[${i}].mediaCost=Number(this.value)||0">
+      </td>
+      <td style="padding:3px 8px${is22?'':';border-bottom:1px solid var(--border)'};text-align:right">
+        <span id="ttotal-${i}" style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.72rem">¥${(tAgentCost+tMediaCost).toLocaleString()}</span>
+      </td>
     </tr>
-    ${is22 ? `<tr>
+    ${is22 && row ? `<tr>
       <td style="padding:4px 8px;border-bottom:1px solid var(--border)">
         <span style="background:rgba(0,245,212,.1);color:var(--cyan);font-family:'Space Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:3px;white-space:nowrap">実績</span>
       </td>
       ${keys.map(k=>`
         <td style="padding:3px 4px;border-bottom:1px solid var(--border)">
-          <input class="input-field" style="text-align:right;width:76px;border-color:rgba(0,245,212,.2)" type="number" min="0"
-            value="${row[k]}"
+          <input class="input-field" style="text-align:right;width:72px;border-color:rgba(0,245,212,.2)" type="number" min="0"
+            value="${row[k]||0}"
             oninput="MONTHLY[${i}]['${k}']=Number(this.value)||0">
         </td>`).join('')}
+      <td style="padding:3px 4px;border-bottom:1px solid var(--border)">
+        <input class="input-field" style="text-align:right;width:88px;border-color:rgba(255,159,67,.25);color:#FF9F43" type="number" min="0"
+          value="${row.agentCost||0}"
+          oninput="MONTHLY[${i}].agentCost=Number(this.value)||0">
+      </td>
+      <td style="padding:3px 4px;border-bottom:1px solid var(--border)">
+        <input class="input-field" style="text-align:right;width:88px;border-color:rgba(248,165,194,.25);color:#F8A5C2" type="number" min="0"
+          value="${row.mediaCost||0}"
+          oninput="MONTHLY[${i}].mediaCost=Number(this.value)||0">
+      </td>
+      <td style="padding:3px 8px;border-bottom:1px solid var(--border);text-align:right">
+        <span style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.72rem">¥${((row.agentCost||0)+(row.mediaCost||0)).toLocaleString()}</span>
+      </td>
     </tr>` : ''}
     `;
   }).join('');
@@ -3486,18 +3509,17 @@ function calcQuarter(label, months){
 
 // 目標値データ（月別・23期）
 let MONTHLY_TARGET_23 = [
-  {month:'9月', applications:200,documentPass:120,firstInterview:98,firstPass:73,secondInterview:65,secondPass:46,offers:40,acceptances:35},
-  {month:'10月',applications:220,documentPass:132,firstInterview:107,firstPass:80,secondInterview:71,secondPass:50,offers:44,acceptances:38},
-  {month:'11月',applications:190,documentPass:114,firstInterview:93,firstPass:70,secondInterview:62,secondPass:44,offers:38,acceptances:33},
-  {month:'12月',applications:155,documentPass:93,firstInterview:75,firstPass:56,secondInterview:50,secondPass:35,offers:31,acceptances:27},
-  {month:'1月', applications:210,documentPass:126,firstInterview:102,firstPass:76,secondInterview:67,secondPass:47,offers:41,acceptances:36},
-  {month:'2月', applications:245,documentPass:147,firstInterview:120,firstPass:90,secondInterview:80,secondPass:56,offers:50,acceptances:44},
-  {month:'3月', applications:280,documentPass:168,firstInterview:136,firstPass:102,secondInterview:90,secondPass:64,offers:57,acceptances:50},
-  {month:'4月', applications:160,documentPass:96,firstInterview:80,firstPass:60,secondInterview:53,secondPass:37,offers:32,acceptances:28},
-  {month:'5月', applications:210,documentPass:126,firstInterview:103,firstPass:77,secondInterview:68,secondPass:48,offers:42,acceptances:37},
-  {month:'6月', applications:235,documentPass:141,firstInterview:114,firstPass:85,secondInterview:75,secondPass:53,offers:47,acceptances:41},
-  {month:'7月', applications:180,documentPass:108,firstInterview:90,firstPass:67,secondInterview:59,secondPass:41,offers:36,acceptances:31},
-  {month:'8月', applications:150,documentPass:90,firstInterview:73,firstPass:54,secondInterview:48,secondPass:34,offers:30,acceptances:26},
+  {month:'10月',applications:220,documentPass:132,firstInterview:107,firstPass:80,secondInterview:71,secondPass:50,offers:44,acceptances:38,agentCost:0,mediaCost:0},
+  {month:'11月',applications:190,documentPass:114,firstInterview:93,firstPass:70,secondInterview:62,secondPass:44,offers:38,acceptances:33,agentCost:0,mediaCost:0},
+  {month:'12月',applications:155,documentPass:93,firstInterview:75,firstPass:56,secondInterview:50,secondPass:35,offers:31,acceptances:27,agentCost:0,mediaCost:0},
+  {month:'1月', applications:210,documentPass:126,firstInterview:102,firstPass:76,secondInterview:67,secondPass:47,offers:41,acceptances:36,agentCost:0,mediaCost:0},
+  {month:'2月', applications:245,documentPass:147,firstInterview:120,firstPass:90,secondInterview:80,secondPass:56,offers:50,acceptances:44,agentCost:0,mediaCost:0},
+  {month:'3月', applications:280,documentPass:168,firstInterview:136,firstPass:102,secondInterview:90,secondPass:64,offers:57,acceptances:50,agentCost:0,mediaCost:0},
+  {month:'4月', applications:160,documentPass:96,firstInterview:80,firstPass:60,secondInterview:53,secondPass:37,offers:32,acceptances:28,agentCost:0,mediaCost:0},
+  {month:'5月', applications:210,documentPass:126,firstInterview:103,firstPass:77,secondInterview:68,secondPass:48,offers:42,acceptances:37,agentCost:0,mediaCost:0},
+  {month:'6月', applications:235,documentPass:141,firstInterview:114,firstPass:85,secondInterview:75,secondPass:53,offers:47,acceptances:41,agentCost:0,mediaCost:0},
+  {month:'7月', applications:180,documentPass:108,firstInterview:90,firstPass:67,secondInterview:59,secondPass:41,offers:36,acceptances:31,agentCost:0,mediaCost:0},
+  {month:'8月', applications:150,documentPass:90,firstInterview:73,firstPass:54,secondInterview:48,secondPass:34,offers:30,acceptances:26,agentCost:0,mediaCost:0},
 ];
 
 // 面接官目標（23期）
