@@ -160,10 +160,16 @@ tr:hover td{background:var(--card2)}
     <div class="nav-link" onclick="showPage('budget',this)" data-page="budget">
       <span class="icon">◎</span>予算管理
     </div>
+    <div class="nav-link" onclick="showPage('applicants',this)" data-page="applicants">
+      <span class="icon">◉</span>応募者管理
+    </div>
+    <div class="nav-link" onclick="showPage('agents',this)" data-page="agents">
+      <span class="icon">◈</span>エージェント管理
+    </div>
     <div style="height:1px;background:var(--border);margin:10px 0"></div>
     <div class="nav-section" style="margin-top:4px">DATA INPUT</div>
     <div class="nav-link" onclick="showPage('input',this)" data-page="input">
-      <span class="icon">✎</span>データ入力
+      <span class="icon">✎</span>実績・目標入力
     </div>
     <div class="nav-link" onclick="showPage('wiki',this)" data-page="wiki">
       <span class="icon">◇</span>採用Wiki
@@ -239,20 +245,59 @@ tr:hover td{background:var(--card2)}
 
   <!-- INTERVIEWER -->
   <div id="sub-interviewer" style="display:none">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px" id="iv-selector"></div>
-    <div class="grid-2" style="margin-bottom:18px">
-      <div class="card">
-        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">パフォーマンス比較（レーダー）</div>
-        <div style="position:relative;height:280px"><canvas id="radarChart"></canvas></div>
+    <!-- 面接官セレクター -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px" id="iv-selector"></div>
+
+    <!-- 表示切り替え -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+      <div class="tabs" style="margin-bottom:0">
+        <button class="tab active" onclick="setIVViewMode('period',this)">期別</button>
+        <button class="tab" onclick="setIVViewMode('monthly',this)">月別</button>
       </div>
-      <div class="card">
-        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">数値比較（棒グラフ）</div>
-        <div class="chart-wrap"><canvas id="ivBarChart"></canvas></div>
+      <div id="iv-metric-select" style="display:flex;align-items:center;gap:8px">
+        <span style="color:var(--t2);font-size:.72rem">指標：</span>
+        <select id="iv-metric-dropdown" onchange="ivSelectedMetric=this.value;renderInterviewer()"
+          style="background:var(--bg2);border:1px solid var(--border);color:var(--t1);padding:6px 10px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.78rem;outline:none;cursor:pointer">
+          <option value="applications">応募数</option>
+          <option value="documentPass">書類通過数</option>
+          <option value="firstInterview">一次面接実施数</option>
+          <option value="firstPass">一次通過数</option>
+          <option value="secondInterview">二次面接実施数</option>
+          <option value="secondPass">二次通過数</option>
+          <option value="offers">内定数</option>
+          <option value="acceptances">承諾数</option>
+        </select>
       </div>
     </div>
-    <div class="card">
-      <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">面接官別詳細データ</div>
-      <div class="tbl-wrap"><table id="iv-table"></table></div>
+
+    <!-- 期別ビュー -->
+    <div id="iv-view-period">
+      <div class="grid-2" style="margin-bottom:18px">
+        <div class="card">
+          <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">パフォーマンス比較（レーダー）</div>
+          <div style="position:relative;height:280px"><canvas id="radarChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">実績 vs 目標（棒グラフ）</div>
+          <div class="chart-wrap"><canvas id="ivBarChart"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">面接官別 期別サマリー（実績・目標・達成率）</div>
+        <div class="tbl-wrap"><table id="iv-table"></table></div>
+      </div>
+    </div>
+
+    <!-- 月別ビュー -->
+    <div id="iv-view-monthly" style="display:none">
+      <div class="card" style="margin-bottom:18px">
+        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:16px" id="iv-monthly-chart-label">月別トレンド（実績 vs 目標）</div>
+        <div class="chart-wrap"><canvas id="ivMonthlyChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">月別詳細（実績・目標・達成率）</div>
+        <div class="tbl-wrap"><table id="iv-monthly-table"></table></div>
+      </div>
     </div>
   </div>
 </div>
@@ -263,6 +308,26 @@ tr:hover td{background:var(--card2)}
     <div>
       <div class="page-title">媒体別KPI管理</div>
       <div class="page-sub">採用チャネルごとのパフォーマンス分析</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem">カテゴリ</span>
+      <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:3px">
+        <button id="mf-all" onclick="setMediaFilter('all',this)"
+          style="padding:7px 16px;border-radius:5px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;background:rgba(0,245,212,.1);color:var(--cyan);transition:all .2s">
+          すべて
+        </button>
+        <button id="mf-媒体" onclick="setMediaFilter('媒体',this)"
+          style="padding:7px 16px;border-radius:5px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:400;background:transparent;color:var(--t2);transition:all .2s">
+          媒体
+        </button>
+        <button id="mf-エージェント" onclick="setMediaFilter('エージェント',this)"
+          style="padding:7px 16px;border-radius:5px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:400;background:transparent;color:var(--t2);transition:all .2s">
+          エージェント
+        </button>
+      </div>
+      <div id="media-filter-badge" style="background:rgba(0,245,212,.08);border:1px solid rgba(0,245,212,.2);color:var(--cyan);font-family:'Space Mono',monospace;font-size:.65rem;padding:4px 12px;border-radius:5px">
+        全媒体
+      </div>
     </div>
   </div>
   <div class="kpi-grid kpi-grid-5" id="media-kpis"></div>
@@ -324,8 +389,8 @@ tr:hover td{background:var(--card2)}
 <div id="page-input" class="page">
   <div class="page-header">
     <div>
-      <div class="page-title">データ入力</div>
-      <div class="page-sub">採用実績・媒体KPI・予算データを入力してダッシュボードに反映</div>
+      <div class="page-title">実績・目標入力</div>
+      <div class="page-sub">採用実績・目標値・媒体KPI・予算データを入力してダッシュボードに反映</div>
     </div>
     <div id="save-toast" style="display:none;background:rgba(67,233,123,.12);border:1px solid #43E97B;color:#43E97B;padding:8px 16px;border-radius:7px;font-size:.78rem;font-family:'Space Mono',monospace">✓ 保存しました</div>
   </div>
@@ -414,9 +479,20 @@ tr:hover td{background:var(--card2)}
   <!-- INTERVIEWER INPUT -->
   <div id="interviewer-input" style="display:none">
     <div class="card" style="margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="display:flex;align-items:center;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem">面接官データ</div>
+          <!-- 入力モード切り替え -->
+          <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:3px">
+            <button id="iv-input-mode-period" onclick="switchIVInputMode('period',this)"
+              style="padding:5px 14px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Mono',monospace;font-size:.7rem;font-weight:700;background:rgba(0,245,212,.12);color:var(--cyan);transition:all .2s">
+              期別入力
+            </button>
+            <button id="iv-input-mode-monthly" onclick="switchIVInputMode('monthly',this)"
+              style="padding:5px 14px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Mono',monospace;font-size:.7rem;font-weight:400;background:transparent;color:var(--t2);transition:all .2s">
+              月別入力
+            </button>
+          </div>
           <!-- 期切り替え -->
           <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:3px">
             <button id="iv-period-btn-22" onclick="switchIVPeriod('22')"
@@ -461,12 +537,390 @@ tr:hover td{background:var(--card2)}
     <button class="tab" onclick="setWikiTab('shapo-tab',this)">社内報ガイドライン</button>
     <button class="tab" onclick="setWikiTab('media-tab',this)">媒体情報</button>
     <button class="tab" onclick="setWikiTab('tasks-tab',this)">タスク管理</button>
+    <button class="tab" onclick="setWikiTab('it-jobs-tab',this)">IT職種情報</button>
   </div>
   <div id="interview-tab"></div>
   <div id="screening-tab" style="display:none"></div>
   <div id="shapo-tab" style="display:none"></div>
   <div id="media-tab" style="display:none"></div>
   <div id="tasks-tab" style="display:none"></div>
+  <div id="it-jobs-tab" style="display:none"></div>
+</div>
+
+<!-- ========== APPLICANTS ========== -->
+<div id="page-applicants" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">応募者管理</div>
+      <div class="page-sub">応募者情報の一元管理・書類AI解析・選考ステータス管理</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="openApplicantModal(null)" class="btn btn-outline-cyan" style="font-size:.78rem;padding:8px 18px">
+        ＋ 応募者を追加
+      </button>
+    </div>
+  </div>
+
+  <!-- フィルターバー -->
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap">
+    <input id="ap-search" type="text" placeholder="氏名・メール・スキルで検索..."
+      oninput="filterApplicants()"
+      style="background:var(--bg2);border:1px solid var(--border);color:var(--t1);padding:8px 14px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.82rem;outline:none;width:240px;transition:border-color .2s"
+      onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
+    <select id="ap-filter-status" onchange="filterApplicants()"
+      style="background:var(--bg2);border:1px solid var(--border);color:var(--t1);padding:8px 12px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.82rem;outline:none;cursor:pointer">
+      <option value="">すべてのステータス</option>
+      <option value="書類選考中">書類選考中</option>
+      <option value="書類通過">書類通過</option>
+      <option value="書類NG">書類NG</option>
+      <option value="一次面接調整中">一次面接調整中</option>
+      <option value="一次面接済">一次面接済</option>
+      <option value="一次通過">一次通過</option>
+      <option value="一次NG">一次NG</option>
+      <option value="二次面接調整中">二次面接調整中</option>
+      <option value="二次面接済">二次面接済</option>
+      <option value="二次通過">二次通過</option>
+      <option value="二次NG">二次NG</option>
+      <option value="内定">内定</option>
+      <option value="承諾">承諾</option>
+      <option value="辞退">辞退</option>
+    </select>
+    <select id="ap-filter-media" onchange="filterApplicants()"
+      style="background:var(--bg2);border:1px solid var(--border);color:var(--t1);padding:8px 12px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.82rem;outline:none;cursor:pointer">
+      <option value="">すべての媒体</option>
+    </select>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <span id="ap-count" style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.7rem"></span>
+    </div>
+  </div>
+
+  <!-- 応募者リスト -->
+  <div id="ap-list"></div>
+</div>
+
+<!-- ========== 応募者モーダル ========== -->
+<div id="ap-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;overflow-y:auto">
+  <div style="max-width:860px;margin:40px auto;padding:20px">
+    <div style="background:#0D1526;border:1px solid var(--border);border-radius:14px;overflow:hidden">
+
+      <!-- モーダルヘッダー -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--border)">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem" id="modal-title">応募者登録</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div id="modal-ai-status" style="display:none;color:var(--cyan);font-family:'Space Mono',monospace;font-size:.7rem;padding:4px 12px;border:1px solid rgba(0,245,212,.3);border-radius:5px;background:rgba(0,245,212,.05)">
+            ✦ AI解析中...
+          </div>
+          <button onclick="closeApplicantModal()" style="background:transparent;border:1px solid var(--border);color:var(--t2);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:1rem;transition:all .2s" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t2)'">×</button>
+        </div>
+      </div>
+
+      <div style="padding:24px">
+        <!-- アップロードエリア（顔写真＋書類） -->
+        <div style="display:grid;grid-template-columns:140px 1fr;gap:14px;margin-bottom:20px">
+
+          <!-- 顔写真 -->
+          <div>
+            <div style="color:var(--t3);font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.05em;margin-bottom:6px">顔写真</div>
+            <div id="photo-area" onclick="document.getElementById('photo-upload').click()"
+              style="width:130px;height:155px;border:1px dashed rgba(123,97,255,.4);border-radius:8px;background:rgba(123,97,255,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;overflow:hidden;position:relative"
+              onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='rgba(123,97,255,.4)'">
+              <img id="photo-preview" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0">
+              <div id="photo-placeholder">
+                <div style="font-size:2rem;opacity:.4;margin-bottom:6px">👤</div>
+                <div style="color:var(--t3);font-size:.65rem;text-align:center">クリックして<br>写真を選択</div>
+              </div>
+            </div>
+            <input type="file" id="photo-upload" accept="image/*" style="display:none" onchange="handlePhotoSelect(this)">
+            <div id="photo-clear-btn" style="display:none;margin-top:5px;text-align:center">
+              <button onclick="clearPhoto()" style="background:transparent;border:none;color:var(--t3);font-size:.68rem;cursor:pointer;padding:2px 6px">✕ 削除</button>
+            </div>
+          </div>
+
+          <!-- 書類アップロード -->
+          <div>
+            <div style="color:var(--t3);font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.05em;margin-bottom:6px">履歴書・職務経歴書</div>
+            <div id="upload-area"
+              style="background:rgba(0,245,212,.04);border:1px dashed rgba(0,245,212,.3);border-radius:10px;padding:18px;text-align:center;height:155px;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:border-color .2s"
+              ondragover="event.preventDefault();this.style.borderColor='var(--cyan)'"
+              ondragleave="this.style.borderColor='rgba(0,245,212,.3)'"
+              ondrop="handleFileDrop(event)">
+              <div style="color:var(--cyan);font-size:1.3rem;margin-bottom:6px">📄</div>
+              <div style="color:var(--t1);font-size:.82rem;font-weight:500;margin-bottom:3px">ドラッグ＆ドロップ</div>
+              <div style="color:var(--t2);font-size:.72rem;margin-bottom:10px">PDF・画像対応・複数可</div>
+              <label style="background:rgba(0,245,212,.1);border:1px solid var(--cyan);color:var(--cyan);padding:6px 16px;border-radius:6px;cursor:pointer;font-size:.75rem">
+                ファイルを選択
+                <input type="file" id="resume-upload" multiple accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" style="display:none" onchange="handleFileSelect(this)">
+              </label>
+            </div>
+            <div id="upload-files" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"></div>
+          </div>
+        </div>
+
+        <!-- フォーム -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+          <!-- 基本情報 -->
+          <div style="grid-column:1/-1">
+            <div style="color:var(--cyan);font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.08em;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+              基本情報
+              <div style="flex:1;height:1px;background:rgba(0,245,212,.2)"></div>
+            </div>
+          </div>
+
+          <div class="input-group"><div class="input-label">氏名 <span style="color:var(--red)">*</span></div><input class="input-field" id="f-name" placeholder="山田 太郎"></div>
+          <div class="input-group"><div class="input-label">フリガナ</div><input class="input-field" id="f-kana" placeholder="ヤマダ タロウ"></div>
+          <div class="input-group"><div class="input-label">生年月日</div><input class="input-field" id="f-dob" type="date"></div>
+          <div class="input-group"><div class="input-label">年齢</div><input class="input-field" id="f-age" type="number" placeholder="25"></div>
+          <div class="input-group"><div class="input-label">性別</div>
+            <select class="input-field" id="f-gender">
+              <option value="">未選択</option><option>男性</option><option>女性</option><option>その他</option><option>回答しない</option>
+            </select>
+          </div>
+          <div class="input-group"><div class="input-label">最終学歴</div><input class="input-field" id="f-education" placeholder="〇〇大学 情報学部"></div>
+
+          <!-- 連絡先 -->
+          <div style="grid-column:1/-1;margin-top:8px">
+            <div style="color:var(--purple);font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.08em;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+              連絡先
+              <div style="flex:1;height:1px;background:rgba(123,97,255,.2)"></div>
+            </div>
+          </div>
+
+          <div class="input-group"><div class="input-label">電話番号</div><input class="input-field" id="f-phone" placeholder="090-0000-0000"></div>
+          <div class="input-group"><div class="input-label">メールアドレス</div><input class="input-field" id="f-email" placeholder="yamada@example.com"></div>
+          <div class="input-group" style="grid-column:1/-1"><div class="input-label">現住所</div><input class="input-field" id="f-address" placeholder="東京都渋谷区..."></div>
+          <div class="input-group"><div class="input-label">最寄り駅</div><input class="input-field" id="f-station" placeholder="渋谷駅"></div>
+          <div class="input-group"><div class="input-label">想定通勤時間</div><input class="input-field" id="f-commute" placeholder="30分"></div>
+
+          <!-- 職歴・スキル -->
+          <div style="grid-column:1/-1;margin-top:8px">
+            <div style="color:var(--yellow);font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.08em;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+              職歴・スキル
+              <div style="flex:1;height:1px;background:rgba(255,230,109,.2)"></div>
+            </div>
+          </div>
+
+          <div class="input-group"><div class="input-label">社会人経験年数</div><input class="input-field" id="f-exp-years" type="number" placeholder="3"></div>
+          <div class="input-group"><div class="input-label">転職回数</div><input class="input-field" id="f-job-changes" type="number" placeholder="1"></div>
+          <div class="input-group"><div class="input-label">現年収（万円）</div><input class="input-field" id="f-current-salary" type="number" placeholder="300"></div>
+          <div class="input-group"><div class="input-label">希望年収（万円）</div><input class="input-field" id="f-desired-salary" type="number" placeholder="350"></div>
+          <div class="input-group" style="grid-column:1/-1"><div class="input-label">PCスキル（Excel / Word / その他）</div><input class="input-field" id="f-pc-skills" placeholder="Excel（VLOOKUP・ピボット）、Word、PowerPoint"></div>
+          <div class="input-group" style="grid-column:1/-1"><div class="input-label">資格・免許</div><input class="input-field" id="f-licenses" placeholder="普通自動車免許、ITパスポートなど"></div>
+          <div class="input-group" style="grid-column:1/-1"><div class="input-label">直近の職務内容</div><textarea class="input-field" id="f-recent-job" rows="3" placeholder="直近の会社での業務内容を記入..." style="resize:vertical"></textarea></div>
+
+          <!-- 採用管理情報 -->
+          <div style="grid-column:1/-1;margin-top:8px">
+            <div style="color:var(--green);font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.08em;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+              採用管理情報
+              <div style="flex:1;height:1px;background:rgba(67,233,123,.2)"></div>
+            </div>
+          </div>
+
+          <div class="input-group"><div class="input-label">応募媒体</div>
+            <select class="input-field" id="f-media">
+              <option value="">選択してください</option>
+            </select>
+          </div>
+          <div class="input-group"><div class="input-label">応募日</div><input class="input-field" id="f-apply-date" type="date"></div>
+          <div class="input-group"><div class="input-label">選考ステータス</div>
+            <select class="input-field" id="f-status">
+              <option>書類選考中</option><option>書類通過</option><option>書類NG</option>
+              <option>一次面接調整中</option><option>一次面接済</option><option>一次通過</option><option>一次NG</option>
+              <option>二次面接調整中</option><option>二次面接済</option><option>二次通過</option><option>二次NG</option>
+              <option>内定</option><option>承諾</option><option>辞退</option>
+            </select>
+          </div>
+          <div class="input-group"><div class="input-label">担当面接官</div>
+            <select class="input-field" id="f-interviewer">
+              <option value="">未割当</option>
+            </select>
+          </div>
+          <div class="input-group"><div class="input-label">入社希望月</div><input class="input-field" id="f-join-month" placeholder="2025年4月"></div>
+          <div class="input-group"><div class="input-label">退職状況</div>
+            <select class="input-field" id="f-resign-status">
+              <option value="">未選択</option><option>在職中（未申告）</option><option>在職中（申告済）</option><option>退職済</option><option>無職</option>
+            </select>
+          </div>
+          <div class="input-group"><div class="input-label">夜勤可否</div>
+            <select class="input-field" id="f-night-shift">
+              <option value="">未選択</option><option>可</option><option>不可</option><option>要相談</option>
+            </select>
+          </div>
+          <div class="input-group"><div class="input-label">シフト可否</div>
+            <select class="input-field" id="f-shift">
+              <option value="">未選択</option><option>可</option><option>不可</option><option>要相談</option>
+            </select>
+          </div>
+          <div class="input-group" style="grid-column:1/-1"><div class="input-label">他社選考状況</div><input class="input-field" id="f-other-companies" placeholder="A社 最終面接中、B社 一次通過..."></div>
+          <div class="input-group" style="grid-column:1/-1"><div class="input-label">既往歴・健康状態メモ</div><input class="input-field" id="f-health" placeholder="特記事項があれば記入..."></div>
+          <div class="input-group" style="grid-column:1/-1"><div class="input-label">備考・メモ</div><textarea class="input-field" id="f-notes" rows="3" placeholder="面接時の印象・懸念点など..." style="resize:vertical"></textarea></div>
+
+        </div><!-- end grid -->
+
+        <!-- 保存ボタン -->
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+          <button onclick="closeApplicantModal()" style="background:transparent;border:1px solid var(--border);color:var(--t2);padding:9px 20px;border-radius:7px;cursor:pointer;font-size:.82rem;transition:all .2s">キャンセル</button>
+          <button onclick="saveApplicant()" class="btn btn-outline-cyan" style="padding:9px 24px;font-size:.82rem">✓ 保存する</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== AGENTS ========== -->
+<div id="page-agents" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">エージェント管理</div>
+      <div class="page-sub">人材紹介エージェントの担当者・実績・優先度を一元管理</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button onclick="openAgentModal(null)" class="btn btn-outline-cyan" style="font-size:.78rem;padding:8px 18px">
+        ＋ エージェントを追加
+      </button>
+    </div>
+  </div>
+
+  <!-- フィルターバー -->
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap">
+    <input id="ag-search" type="text" placeholder="会社名・担当者名で検索..."
+      oninput="filterAgents()"
+      style="background:var(--bg2);border:1px solid var(--border);color:var(--t1);padding:8px 14px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.82rem;outline:none;width:240px;transition:border-color .2s"
+      onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
+    <select id="ag-filter-priority" onchange="filterAgents()"
+      style="background:var(--bg2);border:1px solid var(--border);color:var(--t1);padding:8px 12px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.82rem;outline:none;cursor:pointer">
+      <option value="">すべての優先度</option>
+      <option value="〇">〇 優先</option>
+      <option value="△">△ 普通</option>
+      <option value="✖">✖ 低優先</option>
+      <option value="新">新 新規</option>
+    </select>
+    <!-- 利用状況フィルター -->
+    <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:3px">
+      <button id="agf-all" onclick="setAgentStatusFilter('all',this)"
+        style="padding:6px 14px;border-radius:5px;border:none;cursor:pointer;font-size:.78rem;font-weight:600;background:rgba(0,245,212,.1);color:var(--cyan);transition:all .2s">
+        すべて
+      </button>
+      <button id="agf-active" onclick="setAgentStatusFilter('active',this)"
+        style="padding:6px 14px;border-radius:5px;border:none;cursor:pointer;font-size:.78rem;font-weight:400;background:transparent;color:var(--t2);transition:all .2s">
+        ● 利用中
+      </button>
+      <button id="agf-inactive" onclick="setAgentStatusFilter('inactive',this)"
+        style="padding:6px 14px;border-radius:5px;border:none;cursor:pointer;font-size:.78rem;font-weight:400;background:transparent;color:var(--t2);transition:all .2s">
+        ○ 停止中
+      </button>
+    </div>
+    <div style="margin-left:auto">
+      <span id="ag-count" style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.7rem"></span>
+    </div>
+  </div>
+
+  <!-- エージェントリスト -->
+  <div id="ag-list"></div>
+</div>
+
+<!-- ========== エージェントモーダル ========== -->
+<div id="ag-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;overflow-y:auto">
+  <div style="max-width:680px;margin:40px auto;padding:20px">
+    <div style="background:#0D1526;border:1px solid var(--border);border-radius:14px;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--border)">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem" id="ag-modal-title">エージェント登録</div>
+        <button onclick="closeAgentModal()" style="background:transparent;border:1px solid var(--border);color:var(--t2);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:1rem;transition:all .2s" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t2)'">×</button>
+      </div>
+      <div style="padding:24px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+          <!-- 会社情報 -->
+          <div style="grid-column:1/-1">
+            <div style="color:var(--cyan);font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.08em;margin-bottom:12px;display:flex;align-items:center;gap:8px">会社情報<div style="flex:1;height:1px;background:rgba(0,245,212,.2)"></div></div>
+          </div>
+          <div class="input-group" style="grid-column:1/-1"><div class="input-label">会社名 <span style="color:var(--red)">*</span></div><input class="input-field" id="ag-name" placeholder="株式会社〇〇"></div>
+          <div class="input-group"><div class="input-label">利用状況</div>
+            <div style="display:flex;gap:6px;margin-top:2px">
+              <button type="button" id="ag-status-active" onclick="setAgentStatus('active')"
+                style="flex:1;padding:8px;border-radius:6px;border:1px solid rgba(67,233,123,.5);background:rgba(67,233,123,.1);color:#43E97B;cursor:pointer;font-size:.78rem;font-weight:600;transition:all .2s">
+                ● 利用中
+              </button>
+              <button type="button" id="ag-status-inactive" onclick="setAgentStatus('inactive')"
+                style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--t2);cursor:pointer;font-size:.78rem;transition:all .2s">
+                ○ 停止中
+              </button>
+            </div>
+          </div>
+          <div class="input-group"><div class="input-label">優先度</div>
+            <select class="input-field" id="ag-priority">
+              <option value="">未設定</option>
+              <option value="〇">〇 優先</option>
+              <option value="△">△ 普通</option>
+              <option value="✖">✖ 低優先</option>
+              <option value="新">新 新規</option>
+            </select>
+          </div>
+          <div class="input-group"><div class="input-label">カテゴリ</div>
+            <select class="input-field" id="ag-category">
+              <option value="ITエンジニア">ITエンジニア</option>
+              <option value="既卒・第二新卒">既卒・第二新卒</option>
+              <option value="総合">総合</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+
+          <!-- 紹介料 -->
+          <div style="grid-column:1/-1;margin-top:4px">
+            <div style="color:var(--yellow);font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.08em;margin-bottom:12px;display:flex;align-items:center;gap:8px">紹介料<div style="flex:1;height:1px;background:rgba(255,230,109,.2)"></div></div>
+          </div>
+          <div class="input-group"><div class="input-label">未経験者 紹介料率（%）</div><input class="input-field" id="ag-fee-inexperienced" type="number" step="0.1" placeholder="20.0"></div>
+          <div class="input-group"><div class="input-label">経験者 紹介料率（%）</div><input class="input-field" id="ag-fee-experienced" type="number" step="0.1" placeholder="25.0"></div>
+
+          <!-- 担当者情報 -->
+          <div style="grid-column:1/-1;margin-top:4px">
+            <div style="color:var(--purple);font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.08em;margin-bottom:12px;display:flex;align-items:center;gap:8px">担当者情報<div style="flex:1;height:1px;background:rgba(123,97,255,.2)"></div></div>
+          </div>
+          <div class="input-group"><div class="input-label">担当者名</div><input class="input-field" id="ag-contact-name" placeholder="田中 様"></div>
+          <div class="input-group"><div class="input-label">担当者 TEL</div><input class="input-field" id="ag-contact-tel" placeholder="03-0000-0000"></div>
+          <div class="input-group" style="grid-column:1/-1"><div class="input-label">担当者 メール</div><input class="input-field" id="ag-contact-email" placeholder="tanaka@example.com"></div>
+
+          <!-- 実績（自動集計） -->
+          <div style="grid-column:1/-1;margin-top:4px">
+            <div style="color:var(--green);font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.08em;margin-bottom:4px;display:flex;align-items:center;gap:8px">
+              紹介実績
+              <div style="flex:1;height:1px;background:rgba(67,233,123,.2)"></div>
+              <span style="background:rgba(0,245,212,.08);border:1px solid rgba(0,245,212,.2);color:var(--cyan);font-size:.6rem;padding:2px 8px;border-radius:4px">応募者管理より自動集計</span>
+            </div>
+            <div style="color:var(--t3);font-size:.7rem;margin-bottom:10px">※応募者管理に登録された応募者データから自動で集計されます。手動で上書きも可能です。</div>
+          </div>
+          <div class="input-group"><div class="input-label">紹介数</div>
+            <input class="input-field" id="ag-introductions" type="number" placeholder="0" value="0" style="border-color:rgba(0,245,212,.2)">
+          </div>
+          <div class="input-group"><div class="input-label">書類通過数</div>
+            <input class="input-field" id="ag-doc-pass" type="number" placeholder="0" value="0" style="border-color:rgba(0,245,212,.2)">
+          </div>
+          <div class="input-group"><div class="input-label">一次通過数</div>
+            <input class="input-field" id="ag-first-pass" type="number" placeholder="0" value="0" style="border-color:rgba(0,245,212,.2)">
+          </div>
+          <div class="input-group"><div class="input-label">二次通過数</div>
+            <input class="input-field" id="ag-second-pass" type="number" placeholder="0" value="0" style="border-color:rgba(0,245,212,.2)">
+          </div>
+          <div class="input-group"><div class="input-label">内定数</div>
+            <input class="input-field" id="ag-offers" type="number" placeholder="0" value="0" style="border-color:rgba(0,245,212,.2)">
+          </div>
+          <div class="input-group"><div class="input-label">内定承諾数</div>
+            <input class="input-field" id="ag-acceptances" type="number" placeholder="0" value="0" style="border-color:rgba(0,245,212,.2)">
+          </div>
+
+          <!-- 備考 -->
+          <div style="grid-column:1/-1;margin-top:4px">
+            <div class="input-group"><div class="input-label">備考</div><textarea class="input-field" id="ag-notes" rows="3" placeholder="特記事項・取引条件など..." style="resize:vertical"></textarea></div>
+          </div>
+
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+          <button onclick="closeAgentModal()" style="background:transparent;border:1px solid var(--border);color:var(--t2);padding:9px 20px;border-radius:7px;cursor:pointer;font-size:.82rem">キャンセル</button>
+          <button onclick="saveAgent()" class="btn btn-outline-cyan" style="padding:9px 24px;font-size:.82rem">✓ 保存する</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 </div><!-- end main -->
 
@@ -522,20 +976,20 @@ let MONTHLY_TARGET = [
 ];
 
 const INTERVIEWERS = [
-  {id:0,name:'田中 健一',dept:'エンジニアリング',av:'TK',color:'#00F5D4', applications:312,documentPass:187,firstInterview:152,firstPass:114,secondInterview:101,secondPass:71,offers:62,acceptances:54, target:{applications:320,documentPass:192,firstInterview:156,firstPass:117,secondInterview:104,secondPass:73,offers:64,acceptances:56}},
-  {id:1,name:'佐藤 美咲',dept:'プロダクト',av:'SM',color:'#7B61FF', applications:245,documentPass:147,firstInterview:119,firstPass:89,secondInterview:79,secondPass:55,offers:48,acceptances:42, target:{applications:250,documentPass:150,firstInterview:122,firstPass:91,secondInterview:81,secondPass:57,offers:50,acceptances:44}},
-  {id:2,name:'鈴木 大輔',dept:'デザイン',av:'SD',color:'#FF6B6B', applications:178,documentPass:107,firstInterview:87,firstPass:65,secondInterview:57,secondPass:40,offers:35,acceptances:31, target:{applications:180,documentPass:108,firstInterview:88,firstPass:66,secondInterview:58,secondPass:41,offers:36,acceptances:32}},
-  {id:3,name:'伊藤 裕子',dept:'ビジネス開発',av:'IY',color:'#FFE66D', applications:289,documentPass:173,firstInterview:141,firstPass:105,secondInterview:93,secondPass:66,offers:57,acceptances:50, target:{applications:295,documentPass:177,firstInterview:144,firstPass:108,secondInterview:95,secondPass:68,offers:59,acceptances:52}},
-  {id:4,name:'渡辺 翔太',dept:'データサイエンス',av:'WS',color:'#43E97B', applications:267,documentPass:160,firstInterview:130,firstPass:97,secondInterview:86,secondPass:61,offers:53,acceptances:46, target:{applications:270,documentPass:162,firstInterview:132,firstPass:99,secondInterview:88,secondPass:62,offers:54,acceptances:47}},
+  {id:0,name:'田中 健一',dept:'エンジニアリング',av:'TK',color:'#00F5D4',applications:312,documentPass:187,firstInterview:152,firstPass:114,secondInterview:101,secondPass:71,offers:62,acceptances:54,target:{applications:320,documentPass:192,firstInterview:156,firstPass:117,secondInterview:104,secondPass:73,offers:64,acceptances:56},monthly:[{month:'9月',applications:27,documentPass:16,firstInterview:13,firstPass:10,secondInterview:9,secondPass:6,offers:5,acceptances:5,t_applications:28,t_documentPass:17,t_firstInterview:14,t_firstPass:10,t_secondInterview:9,t_secondPass:6,t_offers:6,t_acceptances:5},{month:'10月',applications:28,documentPass:17,firstInterview:14,firstPass:10,secondInterview:9,secondPass:6,offers:6,acceptances:5,t_applications:29,t_documentPass:18,t_firstInterview:14,t_firstPass:11,t_secondInterview:9,t_secondPass:7,t_offers:6,t_acceptances:5},{month:'11月',applications:26,documentPass:16,firstInterview:13,firstPass:10,secondInterview:8,secondPass:6,offers:5,acceptances:4,t_applications:27,t_documentPass:16,t_firstInterview:13,t_firstPass:10,t_secondInterview:9,t_secondPass:6,t_offers:5,t_acceptances:5},{month:'12月',applications:22,documentPass:13,firstInterview:11,firstPass:8,secondInterview:7,secondPass:5,offers:4,acceptances:4,t_applications:23,t_documentPass:14,t_firstInterview:11,t_firstPass:8,t_secondInterview:7,t_secondPass:5,t_offers:5,t_acceptances:4},{month:'1月',applications:27,documentPass:16,firstInterview:13,firstPass:10,secondInterview:9,secondPass:6,offers:5,acceptances:5,t_applications:28,t_documentPass:17,t_firstInterview:14,t_firstPass:10,t_secondInterview:9,t_secondPass:6,t_offers:6,t_acceptances:5},{month:'2月',applications:30,documentPass:18,firstInterview:14,firstPass:11,secondInterview:10,secondPass:7,offers:6,acceptances:5,t_applications:30,t_documentPass:18,t_firstInterview:15,t_firstPass:11,t_secondInterview:10,t_secondPass:7,t_offers:6,t_acceptances:5},{month:'3月',applications:31,documentPass:19,firstInterview:15,firstPass:11,secondInterview:10,secondPass:7,offers:6,acceptances:5,t_applications:32,t_documentPass:19,t_firstInterview:15,t_firstPass:12,t_secondInterview:10,t_secondPass:7,t_offers:6,t_acceptances:6},{month:'4月',applications:21,documentPass:13,firstInterview:10,firstPass:8,secondInterview:7,secondPass:5,offers:4,acceptances:4,t_applications:22,t_documentPass:13,t_firstInterview:11,t_firstPass:8,t_secondInterview:7,t_secondPass:5,t_offers:4,t_acceptances:4},{month:'5月',applications:27,documentPass:16,firstInterview:13,firstPass:10,secondInterview:9,secondPass:6,offers:5,acceptances:5,t_applications:28,t_documentPass:17,t_firstInterview:14,t_firstPass:10,t_secondInterview:9,t_secondPass:6,t_offers:6,t_acceptances:5},{month:'6月',applications:28,documentPass:17,firstInterview:14,firstPass:10,secondInterview:9,secondPass:6,offers:6,acceptances:5,t_applications:29,t_documentPass:18,t_firstInterview:14,t_firstPass:11,t_secondInterview:9,t_secondPass:7,t_offers:6,t_acceptances:5},{month:'7月',applications:24,documentPass:14,firstInterview:11,firstPass:9,secondInterview:8,secondPass:5,offers:5,acceptances:4,t_applications:24,t_documentPass:14,t_firstInterview:12,t_firstPass:9,t_secondInterview:8,t_secondPass:6,t_offers:5,t_acceptances:4},{month:'8月',applications:20,documentPass:12,firstInterview:10,firstPass:7,secondInterview:6,secondPass:5,offers:4,acceptances:3,t_applications:20,t_documentPass:12,t_firstInterview:10,t_firstPass:7,t_secondInterview:7,t_secondPass:5,t_offers:4,t_acceptances:4}]},
+  {id:1,name:'佐藤 美咲',dept:'プロダクト',av:'SM',color:'#7B61FF',applications:245,documentPass:147,firstInterview:119,firstPass:89,secondInterview:79,secondPass:55,offers:48,acceptances:42,target:{applications:250,documentPass:150,firstInterview:122,firstPass:91,secondInterview:81,secondPass:57,offers:50,acceptances:44},monthly:[{month:'9月',applications:21,documentPass:13,firstInterview:10,firstPass:8,secondInterview:7,secondPass:5,offers:4,acceptances:4,t_applications:22,t_documentPass:13,t_firstInterview:11,t_firstPass:8,t_secondInterview:7,t_secondPass:5,t_offers:4,t_acceptances:4},{month:'10月',applications:22,documentPass:13,firstInterview:11,firstPass:8,secondInterview:7,secondPass:5,offers:4,acceptances:4,t_applications:23,t_documentPass:14,t_firstInterview:11,t_firstPass:8,t_secondInterview:7,t_secondPass:5,t_offers:5,t_acceptances:4},{month:'11月',applications:20,documentPass:12,firstInterview:10,firstPass:7,secondInterview:7,secondPass:5,offers:4,acceptances:4,t_applications:21,t_documentPass:12,t_firstInterview:10,t_firstPass:8,t_secondInterview:7,t_secondPass:5,t_offers:4,t_acceptances:4},{month:'12月',applications:18,documentPass:11,firstInterview:9,firstPass:6,secondInterview:6,secondPass:4,offers:3,acceptances:3,t_applications:18,t_documentPass:11,t_firstInterview:9,t_firstPass:7,t_secondInterview:6,t_secondPass:4,t_offers:4,t_acceptances:3},{month:'1月',applications:21,documentPass:13,firstInterview:10,firstPass:8,secondInterview:7,secondPass:5,offers:4,acceptances:4,t_applications:22,t_documentPass:13,t_firstInterview:11,t_firstPass:8,t_secondInterview:7,t_secondPass:5,t_offers:4,t_acceptances:4},{month:'2月',applications:23,documentPass:14,firstInterview:11,firstPass:8,secondInterview:8,secondPass:5,offers:5,acceptances:4,t_applications:24,t_documentPass:14,t_firstInterview:12,t_firstPass:9,t_secondInterview:8,t_secondPass:5,t_offers:5,t_acceptances:4},{month:'3月',applications:24,documentPass:15,firstInterview:12,firstPass:9,secondInterview:8,secondPass:5,offers:5,acceptances:4,t_applications:25,t_documentPass:15,t_firstInterview:12,t_firstPass:9,t_secondInterview:8,t_secondPass:6,t_offers:5,t_acceptances:4},{month:'4月',applications:17,documentPass:10,firstInterview:8,firstPass:6,secondInterview:5,secondPass:4,offers:3,acceptances:3,t_applications:17,t_documentPass:10,t_firstInterview:8,t_firstPass:6,t_secondInterview:5,t_secondPass:4,t_offers:3,t_acceptances:3},{month:'5月',applications:21,documentPass:13,firstInterview:10,firstPass:8,secondInterview:7,secondPass:5,offers:4,acceptances:4,t_applications:22,t_documentPass:13,t_firstInterview:11,t_firstPass:8,t_secondInterview:7,t_secondPass:5,t_offers:4,t_acceptances:4},{month:'6月',applications:22,documentPass:13,firstInterview:11,firstPass:8,secondInterview:7,secondPass:5,offers:4,acceptances:4,t_applications:23,t_documentPass:14,t_firstInterview:11,t_firstPass:8,t_secondInterview:7,t_secondPass:5,t_offers:5,t_acceptances:4},{month:'7月',applications:18,documentPass:11,firstInterview:9,firstPass:7,secondInterview:6,secondPass:4,offers:4,acceptances:3,t_applications:19,t_documentPass:11,t_firstInterview:9,t_firstPass:7,t_secondInterview:6,t_secondPass:4,t_offers:4,t_acceptances:3},{month:'8月',applications:16,documentPass:9,firstInterview:8,firstPass:6,secondInterview:5,secondPass:3,offers:3,acceptances:3,t_applications:16,t_documentPass:10,t_firstInterview:8,t_firstPass:6,t_secondInterview:5,t_secondPass:4,t_offers:3,t_acceptances:3}]},
+  {id:2,name:'鈴木 大輔',dept:'デザイン',av:'SD',color:'#FF6B6B',applications:178,documentPass:107,firstInterview:87,firstPass:65,secondInterview:57,secondPass:40,offers:35,acceptances:31,target:{applications:180,documentPass:108,firstInterview:88,firstPass:66,secondInterview:58,secondPass:41,offers:36,acceptances:32},monthly:[{month:'9月',applications:16,documentPass:9,firstInterview:8,firstPass:6,secondInterview:5,secondPass:3,offers:3,acceptances:3,t_applications:16,t_documentPass:9,t_firstInterview:8,t_firstPass:6,t_secondInterview:5,t_secondPass:4,t_offers:3,t_acceptances:3},{month:'10月',applications:16,documentPass:10,firstInterview:8,firstPass:6,secondInterview:5,secondPass:4,offers:3,acceptances:3,t_applications:16,t_documentPass:10,t_firstInterview:8,t_firstPass:6,t_secondInterview:5,t_secondPass:4,t_offers:3,t_acceptances:3},{month:'11月',applications:15,documentPass:9,firstInterview:7,firstPass:5,secondInterview:5,secondPass:3,offers:3,acceptances:3,t_applications:15,t_documentPass:9,t_firstInterview:7,t_firstPass:6,t_secondInterview:5,t_secondPass:3,t_offers:3,t_acceptances:3},{month:'12月',applications:13,documentPass:8,firstInterview:6,firstPass:5,secondInterview:4,secondPass:3,offers:2,acceptances:2,t_applications:13,t_documentPass:8,t_firstInterview:6,t_firstPass:5,t_secondInterview:4,t_secondPass:3,t_offers:3,t_acceptances:2},{month:'1月',applications:16,documentPass:9,firstInterview:8,firstPass:6,secondInterview:5,secondPass:3,offers:3,acceptances:3,t_applications:16,t_documentPass:9,t_firstInterview:8,t_firstPass:6,t_secondInterview:5,t_secondPass:4,t_offers:3,t_acceptances:3},{month:'2月',applications:17,documentPass:10,firstInterview:8,firstPass:6,secondInterview:5,secondPass:4,offers:3,acceptances:3,t_applications:17,t_documentPass:10,t_firstInterview:8,t_firstPass:6,t_secondInterview:6,t_secondPass:4,t_offers:3,t_acceptances:3},{month:'3月',applications:18,documentPass:11,firstInterview:9,firstPass:6,secondInterview:6,secondPass:4,offers:3,acceptances:3,t_applications:18,t_documentPass:11,t_firstInterview:9,t_firstPass:7,t_secondInterview:6,t_secondPass:4,t_offers:4,t_acceptances:3},{month:'4月',applications:12,documentPass:7,firstInterview:6,firstPass:4,secondInterview:4,secondPass:3,offers:2,acceptances:2,t_applications:12,t_documentPass:7,t_firstInterview:6,t_firstPass:4,t_secondInterview:4,t_secondPass:3,t_offers:2,t_acceptances:2},{month:'5月',applications:16,documentPass:9,firstInterview:8,firstPass:6,secondInterview:5,secondPass:3,offers:3,acceptances:3,t_applications:16,t_documentPass:9,t_firstInterview:8,t_firstPass:6,t_secondInterview:5,t_secondPass:4,t_offers:3,t_acceptances:3},{month:'6月',applications:16,documentPass:10,firstInterview:8,firstPass:6,secondInterview:5,secondPass:4,offers:3,acceptances:3,t_applications:16,t_documentPass:10,t_firstInterview:8,t_firstPass:6,t_secondInterview:5,t_secondPass:4,t_offers:3,t_acceptances:3},{month:'7月',applications:13,documentPass:8,firstInterview:7,firstPass:5,secondInterview:4,secondPass:3,offers:3,acceptances:2,t_applications:14,t_documentPass:8,t_firstInterview:7,t_firstPass:5,t_secondInterview:4,t_secondPass:3,t_offers:3,t_acceptances:2},{month:'8月',applications:11,documentPass:7,firstInterview:6,firstPass:4,secondInterview:4,secondPass:3,offers:2,acceptances:2,t_applications:11,t_documentPass:7,t_firstInterview:6,t_firstPass:4,t_secondInterview:4,t_secondPass:3,t_offers:2,t_acceptances:2}]},
+  {id:3,name:'伊藤 裕子',dept:'ビジネス開発',av:'IY',color:'#FFE66D',applications:289,documentPass:173,firstInterview:141,firstPass:105,secondInterview:93,secondPass:66,offers:57,acceptances:50,target:{applications:295,documentPass:177,firstInterview:144,firstPass:108,secondInterview:95,secondPass:68,offers:59,acceptances:52},monthly:[{month:'9月',applications:25,documentPass:15,firstInterview:12,firstPass:9,secondInterview:8,secondPass:6,offers:5,acceptances:4,t_applications:26,t_documentPass:15,t_firstInterview:13,t_firstPass:9,t_secondInterview:8,t_secondPass:6,t_offers:5,t_acceptances:5},{month:'10月',applications:26,documentPass:16,firstInterview:13,firstPass:10,secondInterview:8,secondPass:6,offers:5,acceptances:5,t_applications:27,t_documentPass:16,t_firstInterview:13,t_firstPass:10,t_secondInterview:9,t_secondPass:6,t_offers:5,t_acceptances:5},{month:'11月',applications:24,documentPass:14,firstInterview:12,firstPass:9,secondInterview:8,secondPass:6,offers:5,acceptances:4,t_applications:25,t_documentPass:15,t_firstInterview:12,t_firstPass:9,t_secondInterview:8,t_secondPass:6,t_offers:5,t_acceptances:4},{month:'12月',applications:21,documentPass:12,firstInterview:10,firstPass:8,secondInterview:7,secondPass:5,offers:4,acceptances:4,t_applications:21,t_documentPass:13,t_firstInterview:10,t_firstPass:8,t_secondInterview:7,t_secondPass:5,t_offers:4,t_acceptances:4},{month:'1月',applications:25,documentPass:15,firstInterview:12,firstPass:9,secondInterview:8,secondPass:6,offers:5,acceptances:4,t_applications:26,t_documentPass:15,t_firstInterview:13,t_firstPass:9,t_secondInterview:8,t_secondPass:6,t_offers:5,t_acceptances:5},{month:'2月',applications:28,documentPass:16,firstInterview:13,firstPass:10,secondInterview:9,secondPass:6,offers:5,acceptances:5,t_applications:28,t_documentPass:17,t_firstInterview:14,t_firstPass:10,t_secondInterview:9,t_secondPass:6,t_offers:6,t_acceptances:5},{month:'3月',applications:29,documentPass:17,firstInterview:14,firstPass:10,secondInterview:9,secondPass:7,offers:6,acceptances:5,t_applications:29,t_documentPass:18,t_firstInterview:14,t_firstPass:11,t_secondInterview:9,t_secondPass:7,t_offers:6,t_acceptances:5},{month:'4月',applications:19,documentPass:12,firstInterview:10,firstPass:7,secondInterview:6,secondPass:4,offers:4,acceptances:3,t_applications:20,t_documentPass:12,t_firstInterview:10,t_firstPass:7,t_secondInterview:6,t_secondPass:5,t_offers:4,t_acceptances:4},{month:'5月',applications:25,documentPass:15,firstInterview:12,firstPass:9,secondInterview:8,secondPass:6,offers:5,acceptances:4,t_applications:26,t_documentPass:15,t_firstInterview:13,t_firstPass:9,t_secondInterview:8,t_secondPass:6,t_offers:5,t_acceptances:5},{month:'6月',applications:26,documentPass:16,firstInterview:13,firstPass:10,secondInterview:8,secondPass:6,offers:5,acceptances:5,t_applications:27,t_documentPass:16,t_firstInterview:13,t_firstPass:10,t_secondInterview:9,t_secondPass:6,t_offers:5,t_acceptances:5},{month:'7月',applications:22,documentPass:13,firstInterview:11,firstPass:8,secondInterview:7,secondPass:5,offers:4,acceptances:4,t_applications:22,t_documentPass:13,t_firstInterview:11,t_firstPass:8,t_secondInterview:7,t_secondPass:5,t_offers:4,t_acceptances:4},{month:'8月',applications:18,documentPass:11,firstInterview:9,firstPass:7,secondInterview:6,secondPass:4,offers:4,acceptances:3,t_applications:19,t_documentPass:11,t_firstInterview:9,t_firstPass:7,t_secondInterview:6,t_secondPass:4,t_offers:4,t_acceptances:3}]},
+  {id:4,name:'渡辺 翔太',dept:'データサイエンス',av:'WS',color:'#43E97B',applications:267,documentPass:160,firstInterview:130,firstPass:97,secondInterview:86,secondPass:61,offers:53,acceptances:46,target:{applications:270,documentPass:162,firstInterview:132,firstPass:99,secondInterview:88,secondPass:62,offers:54,acceptances:47},monthly:[{month:'9月',applications:23,documentPass:14,firstInterview:11,firstPass:8,secondInterview:8,secondPass:5,offers:5,acceptances:4,t_applications:24,t_documentPass:14,t_firstInterview:12,t_firstPass:9,t_secondInterview:8,t_secondPass:5,t_offers:5,t_acceptances:4},{month:'10月',applications:24,documentPass:15,firstInterview:12,firstPass:9,secondInterview:8,secondPass:6,offers:5,acceptances:4,t_applications:25,t_documentPass:15,t_firstInterview:12,t_firstPass:9,t_secondInterview:8,t_secondPass:6,t_offers:5,t_acceptances:4},{month:'11月',applications:22,documentPass:13,firstInterview:11,firstPass:8,secondInterview:7,secondPass:5,offers:4,acceptances:4,t_applications:22,t_documentPass:14,t_firstInterview:11,t_firstPass:8,t_secondInterview:7,t_secondPass:5,t_offers:4,t_acceptances:4},{month:'12月',applications:19,documentPass:11,firstInterview:9,firstPass:7,secondInterview:6,secondPass:4,offers:4,acceptances:3,t_applications:19,t_documentPass:12,t_firstInterview:9,t_firstPass:7,t_secondInterview:6,t_secondPass:4,t_offers:4,t_acceptances:3},{month:'1月',applications:23,documentPass:14,firstInterview:11,firstPass:8,secondInterview:8,secondPass:5,offers:5,acceptances:4,t_applications:24,t_documentPass:14,t_firstInterview:12,t_firstPass:9,t_secondInterview:8,t_secondPass:5,t_offers:5,t_acceptances:4},{month:'2月',applications:25,documentPass:15,firstInterview:12,firstPass:9,secondInterview:8,secondPass:6,offers:5,acceptances:4,t_applications:26,t_documentPass:15,t_firstInterview:13,t_firstPass:9,t_secondInterview:8,t_secondPass:6,t_offers:5,t_acceptances:4},{month:'3月',applications:26,documentPass:16,firstInterview:13,firstPass:10,secondInterview:9,secondPass:6,offers:5,acceptances:5,t_applications:27,t_documentPass:16,t_firstInterview:13,t_firstPass:10,t_secondInterview:9,t_secondPass:6,t_offers:5,t_acceptances:5},{month:'4月',applications:18,documentPass:11,firstInterview:9,firstPass:7,secondInterview:6,secondPass:4,offers:4,acceptances:3,t_applications:18,t_documentPass:11,t_firstInterview:9,t_firstPass:7,t_secondInterview:6,t_secondPass:4,t_offers:4,t_acceptances:3},{month:'5月',applications:23,documentPass:14,firstInterview:11,firstPass:8,secondInterview:8,secondPass:5,offers:5,acceptances:4,t_applications:24,t_documentPass:14,t_firstInterview:12,t_firstPass:9,t_secondInterview:8,t_secondPass:5,t_offers:5,t_acceptances:4},{month:'6月',applications:24,documentPass:15,firstInterview:12,firstPass:9,secondInterview:8,secondPass:6,offers:5,acceptances:4,t_applications:25,t_documentPass:15,t_firstInterview:12,t_firstPass:9,t_secondInterview:8,t_secondPass:6,t_offers:5,t_acceptances:4},{month:'7月',applications:20,documentPass:12,firstInterview:10,firstPass:7,secondInterview:6,secondPass:5,offers:4,acceptances:3,t_applications:20,t_documentPass:12,t_firstInterview:10,t_firstPass:7,t_secondInterview:7,t_secondPass:5,t_offers:4,t_acceptances:4},{month:'8月',applications:17,documentPass:10,firstInterview:8,firstPass:6,secondInterview:5,secondPass:4,offers:3,acceptances:3,t_applications:17,t_documentPass:10,t_firstInterview:8,t_firstPass:6,t_secondInterview:6,t_secondPass:4,t_offers:3,t_acceptances:3}]},
 ];
 
 const MEDIA = [
-  {name:'Green',type:'IT特化型転職',color:'#00F5D4',budget:2400000,spent:2100000,applications:423,cpa:4965,docRate:62.4,offerRate:8.7,hires:37,cph:56757},
-  {name:'Wantedly',type:'ソーシャル採用',color:'#7B61FF',budget:1200000,spent:980000,applications:312,cpa:3141,docRate:58.3,offerRate:7.4,hires:23,cph:42609},
-  {name:'LinkedIn',type:'プロSNS',color:'#FF6B6B',budget:1800000,spent:1650000,applications:198,cpa:8333,docRate:71.2,offerRate:12.1,hires:24,cph:68750},
-  {name:'リクルートエージェント',type:'人材紹介',color:'#FFE66D',budget:3600000,spent:3400000,applications:156,cpa:21795,docRate:78.8,offerRate:15.4,hires:24,cph:141667},
-  {name:'Indeed',type:'求人検索エンジン',color:'#F8A5C2',budget:960000,spent:820000,applications:534,cpa:1536,docRate:44.6,offerRate:4.3,hires:23,cph:35652},
-  {name:'自社採用サイト',type:'ダイレクト採用',color:'#43E97B',budget:600000,spent:540000,applications:267,cpa:2022,docRate:66.3,offerRate:9.7,hires:26,cph:20769},
+  {name:'Green',type:'IT特化型転職',category:'媒体',color:'#00F5D4',budget:2400000,spent:2100000,applications:423,cpa:4965,docRate:62.4,offerRate:8.7,hires:37,cph:56757},
+  {name:'Wantedly',type:'ソーシャル採用',category:'媒体',color:'#7B61FF',budget:1200000,spent:980000,applications:312,cpa:3141,docRate:58.3,offerRate:7.4,hires:23,cph:42609},
+  {name:'LinkedIn',type:'プロSNS',category:'媒体',color:'#FF6B6B',budget:1800000,spent:1650000,applications:198,cpa:8333,docRate:71.2,offerRate:12.1,hires:24,cph:68750},
+  {name:'リクルートエージェント',type:'人材紹介',category:'エージェント',color:'#FFE66D',budget:3600000,spent:3400000,applications:156,cpa:21795,docRate:78.8,offerRate:15.4,hires:24,cph:141667},
+  {name:'Indeed',type:'求人検索エンジン',category:'媒体',color:'#F8A5C2',budget:960000,spent:820000,applications:534,cpa:1536,docRate:44.6,offerRate:4.3,hires:23,cph:35652},
+  {name:'自社採用サイト',type:'ダイレクト採用',category:'媒体',color:'#43E97B',budget:600000,spent:540000,applications:267,cpa:2022,docRate:66.3,offerRate:9.7,hires:26,cph:20769},
 ];
 
 const BUDGET_ITEMS = [
@@ -560,12 +1014,15 @@ let subView = 'overview';
 let chartMode = 'bar';
 let selectedMetrics = ['applications','documentPass','firstPass','offers','acceptances'];
 let selectedIVs = [0,1];
+let ivViewMode = 'period';
+let ivSelectedMetric = 'applications';
 let editMode = false;
 let mediaSortKey = 'applications';
 let mediaSortDir = -1;
+let mediaFilter = 'all';
 
 // Chart instances
-let mainChartInst=null, convChartInst=null, radarChartInst=null, ivBarChartInst=null;
+let mainChartInst=null, convChartInst=null, radarChartInst=null, ivBarChartInst=null, ivMonthlyChartInst=null;
 let mediaBarInst=null, cphInst=null;
 let pieInst=null, budgetBarInst=null;
 
@@ -592,6 +1049,8 @@ function showPage(page, el){
   if(page==='budget') renderBudget();
   if(page==='input') renderMonthlyInput();
   if(page==='wiki') renderWiki();
+  if(page==='applicants') renderApplicants();
+  if(page==='agents') renderAgents();
 }
 
 // ========== DASHBOARD ==========
@@ -929,21 +1388,38 @@ function renderFunnel(t){
 }
 
 // INTERVIEWER
+function setIVViewMode(mode, el){
+  ivViewMode = mode;
+  el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('iv-view-period').style.display = mode==='period'?'block':'none';
+  document.getElementById('iv-view-monthly').style.display = mode==='monthly'?'block':'none';
+  renderInterviewer();
+}
+
 function renderInterviewer(){
-  // Selector
+  const sel = INTERVIEWERS.filter(iv=>selectedIVs.includes(iv.id));
+
+  // セレクター
   document.getElementById('iv-selector').innerHTML = INTERVIEWERS.map(iv=>`
     <div class="iv-card ${selectedIVs.includes(iv.id)?'selected':''}" onclick="toggleIV(${iv.id})"
-      style="${selectedIVs.includes(iv.id)?`color:${iv.color};border-color:${iv.color}`:``}">
+      style="${selectedIVs.includes(iv.id)?`color:${iv.color};border-color:${iv.color}`:''}">
       <div class="iv-avatar" style="background:${selectedIVs.includes(iv.id)?iv.color:'#1A2A45'};color:${selectedIVs.includes(iv.id)?'#070B14':'#7A8FA6'}">${iv.av}</div>
       <div><div class="iv-name">${iv.name}</div><div class="iv-dept">${iv.dept}</div></div>
     </div>`).join('');
 
-  const sel = INTERVIEWERS.filter(iv=>selectedIVs.includes(iv.id));
+  if(ivViewMode==='period') renderIVPeriodView(sel);
+  else renderIVMonthlyView(sel);
+}
 
-  // Radar
+// ===== 期別ビュー =====
+function renderIVPeriodView(sel){
+  const metricLabel = METRICS.find(m=>m.key===ivSelectedMetric)?.label || '応募数';
+
+  // Radar（全指標・達成率%）
   radarChartInst = destroyChart(radarChartInst);
   const maxVals = {};
-  METRICS.forEach(m=>{ maxVals[m.key]=Math.max(...INTERVIEWERS.map(iv=>iv[m.key])); });
+  METRICS.forEach(m=>{ maxVals[m.key]=Math.max(...INTERVIEWERS.map(iv=>iv[m.key]||0),1); });
   const radarCtx = document.getElementById('radarChart').getContext('2d');
   radarChartInst = new Chart(radarCtx,{
     type:'radar',
@@ -951,43 +1427,141 @@ function renderInterviewer(){
       labels:METRICS.map(m=>m.label),
       datasets:sel.map(iv=>({
         label:iv.name,
-        data:METRICS.map(m=>Math.round(iv[m.key]/maxVals[m.key]*100)),
+        data:METRICS.map(m=>Math.round((iv[m.key]||0)/maxVals[m.key]*100)),
         borderColor:iv.color, backgroundColor:iv.color+'18', pointBackgroundColor:iv.color,
         borderWidth:2, pointRadius:3,
       }))
     },
-    options:{
-      responsive:true,maintainAspectRatio:false,
+    options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{labels:{color:'#7A8FA6',font:{family:'DM Sans',size:11}}},tooltip:{backgroundColor:'#0F1A2E',borderColor:'#1A2A45',borderWidth:1,titleColor:'#00F5D4',bodyColor:'#E8F4F8'}},
       scales:{r:{grid:{color:'#1A2A45'},ticks:{color:'#3D5A73',font:{size:9},backdropColor:'transparent'},pointLabels:{color:'#7A8FA6',font:{size:9}},angleLines:{color:'#1A2A45'}}},
     }
   });
 
-  // Bar comparison
+  // 実績 vs 目標 棒グラフ（選択指標）
   ivBarChartInst = destroyChart(ivBarChartInst);
   const ivBarCtx = document.getElementById('ivBarChart').getContext('2d');
   ivBarChartInst = new Chart(ivBarCtx,{
     type:'bar',
     data:{
-      labels:METRICS.map(m=>m.label),
-      datasets:sel.map(iv=>({label:iv.name,data:METRICS.map(m=>iv[m.key]),backgroundColor:iv.color+'BB',borderRadius:3}))
+      labels:sel.map(iv=>iv.name),
+      datasets:[
+        {label:'実績',data:sel.map(iv=>iv[ivSelectedMetric]||0),backgroundColor:sel.map(iv=>iv.color+'BB'),borderRadius:3},
+        {label:'目標',data:sel.map(iv=>iv.target?.[ivSelectedMetric]||0),backgroundColor:'rgba(255,255,255,.1)',borderRadius:3,borderWidth:1,borderColor:sel.map(iv=>iv.color)},
+      ]
     },
-    options:chartOpts(false),
+    options:{...chartOpts(false),plugins:{...chartOpts(false).plugins,title:{display:true,text:metricLabel+' 実績 vs 目標',color:'#7A8FA6',font:{size:11}}}},
   });
 
-  // Table
-  const th = ['面接官','部署',...METRICS.map(m=>m.label),'承諾率'].map(h=>`<th style="text-align:${h==='面接官'||h==='部署'?'left':'right'}">${h}</th>`).join('');
-  const rows = INTERVIEWERS.map((iv,i)=>`
+  // 期別サマリーテーブル（実績・目標・達成率）
+  const rateColor = r => r>=100?'#43E97B':r>=80?'#FFE66D':'#FF6B6B';
+  const th = `
+    <th style="text-align:left">面接官</th>
+    <th style="text-align:left">部署</th>
+    ${METRICS.map(m=>`<th style="text-align:right;color:${m.color}">${m.label}</th>`).join('')}
+    <th style="text-align:right;color:#43E97B">承諾率</th>
+  `;
+  const rows = INTERVIEWERS.map(iv=>{
+    const rc = rateColor(Math.round((iv[ivSelectedMetric]||0)/(iv.target?.[ivSelectedMetric]||1)*100));
+    return `
+    <tr style="border-top:2px solid var(--border)">
+      <td rowspan="3">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:24px;height:24px;border-radius:50%;background:${iv.color};color:#070B14;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700">${iv.av}</div>
+          <span style="color:var(--t1);font-weight:600">${iv.name}</span>
+        </div>
+      </td>
+      <td rowspan="3" style="color:var(--t2);font-size:.75rem">${iv.dept}</td>
+      <td style="padding:3px 8px"><span style="background:rgba(0,245,212,.1);color:var(--cyan);font-family:'Space Mono',monospace;font-size:.6rem;padding:1px 6px;border-radius:3px">実績</span></td>
+      ${METRICS.map(m=>`<td class="mono" style="text-align:right;color:${m.color};padding:4px 8px">${(iv[m.key]||0).toLocaleString()}</td>`).join('')}
+      <td class="mono" style="text-align:right;color:#43E97B;padding:4px 8px">${pct(iv.acceptances,iv.applications)}%</td>
+    </tr>
     <tr>
-      <td><div style="display:flex;align-items:center;gap:8px">
-        <div style="width:22px;height:22px;border-radius:50%;background:${iv.color};color:#070B14;display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:700">${iv.av}</div>
-        <span style="color:var(--t1);font-weight:500">${iv.name}</span>
-      </div></td>
-      <td style="color:var(--t2)">${iv.dept}</td>
-      ${METRICS.map(m=>`<td class="mono" style="text-align:right;color:${m.color}">${iv[m.key].toLocaleString()}</td>`).join('')}
-      <td class="mono" style="text-align:right;color:#43E97B">${pct(iv.acceptances,iv.applications)}%</td>
-    </tr>`).join('');
+      <td style="padding:3px 8px"><span style="background:rgba(123,97,255,.1);color:var(--purple);font-family:'Space Mono',monospace;font-size:.6rem;padding:1px 6px;border-radius:3px">目標</span></td>
+      ${METRICS.map(m=>`<td class="mono" style="text-align:right;color:var(--t3);padding:4px 8px">${(iv.target?.[m.key]||0).toLocaleString()}</td>`).join('')}
+      <td class="mono" style="text-align:right;color:var(--t3);padding:4px 8px">${pct(iv.target?.acceptances||0,iv.target?.applications||1)}%</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:3px 8px"><span style="background:rgba(67,233,123,.07);color:#43E97B;font-family:'Space Mono',monospace;font-size:.6rem;padding:1px 6px;border-radius:3px">達成率</span></td>
+      ${METRICS.map(m=>{
+        const r=Math.round((iv[m.key]||0)/(iv.target?.[m.key]||1)*100);
+        const c=rateColor(r);
+        return `<td style="text-align:right;padding:4px 8px"><span style="font-family:'Space Mono',monospace;font-size:.7rem;font-weight:700;color:${c}">${r}%</span></td>`;
+      }).join('')}
+      <td style="padding:4px 8px"></td>
+    </tr>`;
+  }).join('');
   document.getElementById('iv-table').innerHTML = `<thead><tr>${th}</tr></thead><tbody>${rows}</tbody>`;
+}
+
+// ===== 月別ビュー =====
+function renderIVMonthlyView(sel){
+  const metricKey = ivSelectedMetric;
+  const metricLabel = METRICS.find(m=>m.key===metricKey)?.label || '応募数';
+  const months = ['9月','10月','11月','12月','1月','2月','3月','4月','5月','6月','7月','8月'];
+
+  document.getElementById('iv-monthly-chart-label').textContent =
+    `月別トレンド（${metricLabel}）— 実線:実績 / 点線:目標`;
+
+  // 月別折れ線チャート（実績・目標）
+  ivMonthlyChartInst = destroyChart(ivMonthlyChartInst);
+  const datasets = [];
+  sel.forEach(iv=>{
+    // 実績
+    datasets.push({
+      label: iv.name+' 実績',
+      data: months.map(m=>{ const r=iv.monthly?.find(x=>x.month===m); return r?r[metricKey]:0; }),
+      borderColor: iv.color, backgroundColor: iv.color+'22',
+      borderWidth:2, pointRadius:3, fill:false, tension:.4,
+    });
+    // 目標
+    datasets.push({
+      label: iv.name+' 目標',
+      data: months.map(m=>{ const r=iv.monthly?.find(x=>x.month===m); return r?r['t_'+metricKey]:0; }),
+      borderColor: iv.color, backgroundColor: 'transparent',
+      borderWidth:1.5, borderDash:[5,4], pointRadius:2, fill:false, tension:.4,
+    });
+  });
+  const ctx = document.getElementById('ivMonthlyChart').getContext('2d');
+  ivMonthlyChartInst = new Chart(ctx,{
+    type:'line',
+    data:{ labels:months, datasets },
+    options: chartOpts(false),
+  });
+
+  // 月別テーブル（面接官ごとに実績・目標・達成率）
+  const rateColor = r => r>=100?'#43E97B':r>=80?'#FFE66D':'#FF6B6B';
+  const th = `
+    <th style="text-align:left">月</th>
+    ${sel.map(iv=>`<th colspan="3" style="text-align:center;color:${iv.color}">${iv.name}</th>`).join('')}
+  `;
+  const subTh = `
+    <th></th>
+    ${sel.map(()=>`
+      <th style="text-align:right;color:var(--cyan);font-family:'Space Mono',monospace;font-size:.6rem">実績</th>
+      <th style="text-align:right;color:var(--purple);font-family:'Space Mono',monospace;font-size:.6rem">目標</th>
+      <th style="text-align:right;color:#43E97B;font-family:'Space Mono',monospace;font-size:.6rem">達成率</th>
+    `).join('')}
+  `;
+  const rows = months.map(m=>`
+    <tr style="border-bottom:1px solid rgba(26,42,69,.5)">
+      <td style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.72rem;padding:6px 10px">${m}</td>
+      ${sel.map(iv=>{
+        const row = iv.monthly?.find(x=>x.month===m) || {};
+        const actual = row[metricKey]||0;
+        const target = row['t_'+metricKey]||0;
+        const r = target>0 ? Math.round(actual/target*100) : null;
+        const rc = r!=null ? rateColor(r) : 'var(--t3)';
+        return `
+          <td class="mono" style="text-align:right;color:${iv.color};padding:6px 8px">${actual.toLocaleString()}</td>
+          <td class="mono" style="text-align:right;color:var(--t3);padding:6px 8px">${target.toLocaleString()}</td>
+          <td style="text-align:right;padding:6px 8px">
+            ${r!=null?`<span style="font-family:'Space Mono',monospace;font-size:.7rem;font-weight:700;color:${rc}">${r}%</span>`:'—'}
+          </td>`;
+      }).join('')}
+    </tr>`).join('');
+  document.getElementById('iv-monthly-table').innerHTML =
+    `<thead><tr>${th}</tr><tr style="border-bottom:1px solid var(--border)">${subTh}</tr></thead><tbody>${rows}</tbody>`;
 }
 
 function toggleIV(id){
@@ -1001,16 +1575,42 @@ function toggleIV(id){
 }
 
 // ========== MEDIA ==========
+function setMediaFilter(filter, el){
+  mediaFilter = filter;
+  // ボタンの見た目更新
+  ['all','媒体','エージェント'].forEach(f=>{
+    const btn = document.getElementById('mf-'+f);
+    if(!btn) return;
+    const active = f === filter;
+    btn.style.background = active ? 'rgba(0,245,212,.1)' : 'transparent';
+    btn.style.color = active ? 'var(--cyan)' : 'var(--t2)';
+    btn.style.fontWeight = active ? '600' : '400';
+  });
+  // バッジ更新
+  const badge = document.getElementById('media-filter-badge');
+  if(badge){
+    const label = filter==='all'?'全媒体':filter==='媒体'?'媒体のみ':'エージェントのみ';
+    badge.textContent = label;
+  }
+  renderMedia();
+}
+
+function filteredMedia(){
+  if(mediaFilter==='all') return MEDIA;
+  return MEDIA.filter(m=>m.category===mediaFilter);
+}
+
 function renderMedia(){
-  const totBudget=sum(MEDIA,'budget'), totSpent=sum(MEDIA,'spent'), totApps=sum(MEDIA,'applications'), totHires=sum(MEDIA,'hires');
-  const avgCPH=totSpent/totHires;
+  const FM = filteredMedia();
+  const totBudget=sum(FM,'budget'), totSpent=sum(FM,'spent'), totApps=sum(FM,'applications'), totHires=sum(FM,'hires');
+  const avgCPH=totHires>0?totSpent/totHires:0;
 
   document.getElementById('media-kpis').innerHTML=[
-    {label:'総予算',value:yen(totBudget),color:'#7B61FF'},
-    {label:'使用額',value:yen(totSpent),sub:`${pct(totSpent,totBudget)}% 消化`,color:'#FF6B6B'},
+    {label:'総予算',value:yenFull(totBudget),color:'#7B61FF'},
+    {label:'使用額',value:yenFull(totSpent),sub:`${pct(totSpent,totBudget)}% 消化`,color:'#FF6B6B'},
     {label:'総応募数',value:totApps.toLocaleString(),color:'#00F5D4'},
     {label:'総採用数',value:totHires.toString(),color:'#43E97B'},
-    {label:'平均CPH',value:yen(avgCPH),color:'#FFE66D'},
+    {label:'平均CPH',value:yenFull(avgCPH),color:'#FFE66D'},
   ].map(k=>`
     <div class="kpi-card">
       <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${k.color}"></div>
@@ -1024,37 +1624,37 @@ function renderMedia(){
   const mbCtx = document.getElementById('mediaBarChart').getContext('2d');
   mediaBarInst = new Chart(mbCtx,{
     type:'bar',
-    data:{labels:MEDIA.map(m=>m.name),datasets:[
-      {label:'応募数',data:MEDIA.map(m=>m.applications),backgroundColor:'#00F5D4BB',borderRadius:3},
-      {label:'採用数',data:MEDIA.map(m=>m.hires),backgroundColor:'#43E97BBB',borderRadius:3},
+    data:{labels:FM.map(m=>m.name),datasets:[
+      {label:'応募数',data:FM.map(m=>m.applications),backgroundColor:'#00F5D4BB',borderRadius:3},
+      {label:'採用数',data:FM.map(m=>m.hires),backgroundColor:'#43E97BBB',borderRadius:3},
     ]},
     options:chartOpts(false),
   });
 
-  const sorted=[...MEDIA].sort((a,b)=>a.cph-b.cph);
+  const sorted=[...FM].sort((a,b)=>a.cph-b.cph);
   cphInst = destroyChart(cphInst);
   const cphCtx = document.getElementById('cphChart').getContext('2d');
   cphInst = new Chart(cphCtx,{
     type:'bar',
     data:{labels:sorted.map(m=>m.name),datasets:[{
       label:'CPH',data:sorted.map(m=>m.cph),
-      backgroundColor:sorted.map(m=>m.color+'BB'),borderRadius:3,
+      backgroundColor:sorted.map(m=>(m.color||'#00F5D4')+'BB'),borderRadius:3,
     }]},
     options:{
       ...chartOpts(true),
-      plugins:{...chartOpts(true).plugins,legend:{display:false},tooltip:{...chartOpts(true).plugins.tooltip,callbacks:{label:ctx=>`CPH: ${yen(ctx.parsed.x)}`}}},
-      scales:{...chartOpts(true).scales,x:{...chartOpts(true).scales.x,ticks:{...chartOpts(true).scales.x.ticks,callback:v=>yen(v)}}},
+      plugins:{...chartOpts(true).plugins,legend:{display:false},tooltip:{...chartOpts(true).plugins.tooltip,callbacks:{label:ctx=>`CPH: ${yenFull(ctx.parsed.x)}`}}},
+      scales:{...chartOpts(true).scales,x:{...chartOpts(true).scales.x,ticks:{...chartOpts(true).scales.x.ticks,callback:v=>yenFull(v)}}},
     },
   });
 
   // Budget bars
-  document.getElementById('media-budget-bars').innerHTML = MEDIA.map(m=>{
+  document.getElementById('media-budget-bars').innerHTML = FM.map(m=>{
     const p=(m.spent/m.budget*100);
     return `<div class="budget-row">
       <span style="color:${m.color};font-size:.78rem;font-weight:600">${m.name}</span>
       <div class="prog-bg"><div class="prog-fill" style="width:${Math.min(p,100).toFixed(1)}%;background:${p>95?'#FF6B6B':p>80?'#FFE66D':m.color}"></div></div>
-      <span class="mono" style="text-align:right;color:var(--t2)">${yen(m.budget)}</span>
-      <span class="mono" style="text-align:right;color:${m.color}">${yen(m.spent)}</span>
+      <span class="mono" style="text-align:right;color:var(--t2)">${yenFull(m.budget)}</span>
+      <span class="mono" style="text-align:right;color:${m.color}">${yenFull(m.spent)}</span>
       <span class="mono" style="text-align:right;color:${p>95?'#FF6B6B':'var(--t2)'}">${p.toFixed(0)}%</span>
     </div>`;
   }).join('');
@@ -1063,8 +1663,10 @@ function renderMedia(){
 }
 
 function renderMediaTable(){
+  const FM = filteredMedia();
   const cols=[
     {key:'name',label:'媒体名',right:false},
+    {key:'category',label:'カテゴリ',right:false},
     {key:'type',label:'タイプ',right:false},
     {key:'budget',label:'予算',right:true,fmt:yen},
     {key:'spent',label:'使用額',right:true,fmt:yen},
@@ -1076,18 +1678,22 @@ function renderMediaTable(){
     {key:'cph',label:'CPH',right:true,fmt:yen},
   ];
   const th=cols.map(c=>`<th style="text-align:${c.right?'right':'left'}" onclick="${c.right?`mediaSort('${c.key}')`:''}">${c.label}${c.right&&mediaSortKey===c.key?(mediaSortDir<0?' ↓':' ↑'):''}</th>`).join('');
-  const sorted=[...MEDIA].sort((a,b)=>(a[mediaSortKey]-b[mediaSortKey])*mediaSortDir*-1);
+  const sorted=[...FM].sort((a,b)=>{
+    const av=(a[mediaSortKey]||0), bv=(b[mediaSortKey]||0);
+    return typeof av==='string'?av.localeCompare(bv):(av-bv)*mediaSortDir*-1;
+  });
   const rows=sorted.map(m=>`<tr>
     <td><div style="display:flex;align-items:center;gap:7px"><div style="width:7px;height:7px;border-radius:50%;background:${m.color}"></div><span style="color:var(--t1);font-weight:600">${m.name}</span></div></td>
+    <td><span style="background:${m.category==='エージェント'?'rgba(255,230,109,.1)':'rgba(0,245,212,.1)'};color:${m.category==='エージェント'?'var(--yellow)':'var(--cyan)'};font-size:.68rem;font-family:'Space Mono',monospace;padding:2px 8px;border-radius:4px">${m.category||'媒体'}</span></td>
     <td style="color:var(--t2)">${m.type}</td>
-    <td class="mono" style="text-align:right;color:var(--t2)">${yen(m.budget)}</td>
-    <td class="mono" style="text-align:right;color:${m.color}">${yen(m.spent)}</td>
+    <td class="mono" style="text-align:right;color:var(--t2)">${yenFull(m.budget)}</td>
+    <td class="mono" style="text-align:right;color:${m.color}">${yenFull(m.spent)}</td>
     <td class="mono" style="text-align:right;color:#00F5D4">${m.applications.toLocaleString()}</td>
-    <td class="mono" style="text-align:right;color:var(--t2)">${yen(m.cpa)}</td>
+    <td class="mono" style="text-align:right;color:var(--t2)">${yenFull(m.cpa)}</td>
     <td class="mono" style="text-align:right;color:#7B61FF">${m.docRate.toFixed(1)}%</td>
     <td class="mono" style="text-align:right;color:#FFE66D">${m.offerRate.toFixed(1)}%</td>
     <td class="mono" style="text-align:right;color:#43E97B;font-weight:700">${m.hires}</td>
-    <td class="mono" style="text-align:right;color:${m.cph<60000?'#43E97B':m.cph<100000?'#FFE66D':'#FF6B6B'}">${yen(m.cph)}</td>
+    <td class="mono" style="text-align:right;color:${m.cph<60000?'#43E97B':m.cph<100000?'#FFE66D':'#FF6B6B'}">${yenFull(m.cph)}</td>
   </tr>`).join('');
   document.getElementById('media-table').innerHTML=`<thead><tr>${th}</tr></thead><tbody>${rows}</tbody>`;
 }
@@ -1355,7 +1961,7 @@ function setWikiTab(tab, el){
   document.querySelectorAll('#wiki-tabs .tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   currentWikiTab = tab;
-  ['interview-tab','screening-tab','shapo-tab','media-tab','tasks-tab'].forEach(id=>{
+  ['interview-tab','screening-tab','shapo-tab','media-tab','tasks-tab','it-jobs-tab'].forEach(id=>{
     document.getElementById(id).style.display = id===tab?'block':'none';
   });
   renderCurrentWikiTab();
@@ -1368,6 +1974,7 @@ function renderCurrentWikiTab(){
     'shapo-tab': renderShapoTab,
     'media-tab': renderMediaWikiTab,
     'tasks-tab': renderTasksTab,
+    'it-jobs-tab': renderITJobsTab,
   };
   if(map[currentWikiTab]) map[currentWikiTab]();
 }
@@ -1724,11 +2331,1029 @@ function renderTasksTab(){
   }
 }
 
+
+// ========== APPLICANTS ==========
+
+let APPLICANTS = [];
+let currentApplicantId = null;
+let apUploadedFiles = [];
+
+// ステータスカラー
+const STATUS_COLORS = {
+  '書類選考中':'#7B61FF','書類通過':'#00F5D4','書類NG':'#FF6B6B',
+  '一次面接調整中':'#FFE66D','一次面接済':'#FFE66D','一次通過':'#00F5D4','一次NG':'#FF6B6B',
+  '二次面接調整中':'#F8A5C2','二次面接済':'#F8A5C2','二次通過':'#00F5D4','二次NG':'#FF6B6B',
+  '内定':'#43E97B','承諾':'#43E97B','辞退':'#FF6B6B',
+};
+
+function loadApplicants(){
+  try {
+    const saved = localStorage.getItem('ro_applicants');
+    if(saved) APPLICANTS = JSON.parse(saved);
+  } catch(e){}
+}
+
+function saveApplicants(){
+  try { localStorage.setItem('ro_applicants', JSON.stringify(APPLICANTS)); } catch(e){}
+}
+
+function renderApplicants(){
+  loadApplicants();
+  // 媒体プルダウン更新
+  const mediaSelect = document.getElementById('ap-filter-media');
+  if(mediaSelect){
+    const opts = MEDIA.map(m=>`<option value="${m.name}">${m.name}</option>`).join('');
+    mediaSelect.innerHTML = '<option value="">すべての媒体</option>' + opts;
+  }
+  filterApplicants();
+}
+
+function filterApplicants(){
+  const search = (document.getElementById('ap-search')?.value||'').toLowerCase();
+  const status = document.getElementById('ap-filter-status')?.value||'';
+  const media  = document.getElementById('ap-filter-media')?.value||'';
+
+  const filtered = APPLICANTS.filter(ap=>{
+    const matchSearch = !search ||
+      (ap.name||'').toLowerCase().includes(search) ||
+      (ap.email||'').toLowerCase().includes(search) ||
+      (ap.pcSkills||'').toLowerCase().includes(search) ||
+      (ap.licenses||'').toLowerCase().includes(search);
+    const matchStatus = !status || ap.status===status;
+    const matchMedia  = !media  || ap.media===media;
+    return matchSearch && matchStatus && matchMedia;
+  });
+
+  document.getElementById('ap-count').textContent = `${filtered.length} / ${APPLICANTS.length} 件`;
+  renderApplicantList(filtered);
+}
+
+function renderApplicantList(list){
+  const el = document.getElementById('ap-list');
+  if(!list.length){
+    el.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:var(--t2)">
+        <div style="font-size:2rem;margin-bottom:12px;opacity:.4">👤</div>
+        <div style="font-size:.88rem">応募者が登録されていません</div>
+        <div style="font-size:.75rem;margin-top:6px;color:var(--t3)">右上の「応募者を追加」から登録してください</div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div style="display:grid;gap:10px">
+      ${list.map(ap=>{
+        const sc = STATUS_COLORS[ap.status]||'#7A8FA6';
+        return `
+        <div class="card" style="padding:16px 20px;cursor:pointer;transition:all .2s"
+          onclick="openApplicantModal('${ap.id}')"
+          onmouseover="this.style.borderColor='rgba(0,245,212,.3)'"
+          onmouseout="this.style.borderColor='var(--border)'">
+          <div style="display:grid;grid-template-columns:200px 120px 140px 140px 1fr auto;gap:16px;align-items:center">
+            <!-- 氏名 -->
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;border:1px solid ${sc};flex-shrink:0;background:${sc}22;display:flex;align-items:center;justify-content:center">
+                ${ap.photo
+                  ? `<img src="${ap.photo}" style="width:100%;height:100%;object-fit:cover">`
+                  : `<span style="font-size:.72rem;font-weight:700;color:${sc}">${(ap.name||'?').slice(0,2)}</span>`}
+              </div>
+              <div>
+                <div style="color:var(--t1);font-weight:600;font-size:.88rem">${ap.name||'未入力'}</div>
+                <div style="color:var(--t2);font-size:.7rem">${ap.kana||''}</div>
+              </div>
+            </div>
+            <!-- ステータス -->
+            <div>
+              <span style="background:${sc}18;color:${sc};border:1px solid ${sc}44;font-family:'Space Mono',monospace;font-size:.65rem;padding:3px 8px;border-radius:4px;white-space:nowrap">
+                ${ap.status||'未設定'}
+              </span>
+            </div>
+            <!-- 媒体 -->
+            <div style="color:var(--t2);font-size:.78rem">${ap.media||'—'}</div>
+            <!-- 面接官 -->
+            <div style="color:var(--t2);font-size:.78rem">${ap.interviewer||'未割当'}</div>
+            <!-- スキル概要 -->
+            <div style="color:var(--t3);font-size:.72rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ap.pcSkills||ap.licenses||'—'}</div>
+            <!-- 操作 -->
+            <div style="display:flex;gap:6px">
+              <button onclick="event.stopPropagation();deleteApplicant('${ap.id}')"
+                class="del-btn" title="削除">×</button>
+            </div>
+          </div>
+          <!-- 応募日・年齢・希望年収 -->
+          <div style="display:flex;gap:20px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+            ${ap.applyDate?`<span style="color:var(--t3);font-size:.7rem">📅 ${ap.applyDate}</span>`:''}
+            ${ap.age?`<span style="color:var(--t3);font-size:.7rem">🎂 ${ap.age}歳</span>`:''}
+            ${ap.currentSalary?`<span style="color:var(--t3);font-size:.7rem">💴 現年収 ${ap.currentSalary}万円</span>`:''}
+            ${ap.desiredSalary?`<span style="color:var(--t3);font-size:.7rem">💰 希望 ${ap.desiredSalary}万円</span>`:''}
+            ${ap.expYears?`<span style="color:var(--t3);font-size:.7rem">💼 経験 ${ap.expYears}年</span>`:''}
+            ${ap.station?`<span style="color:var(--t3);font-size:.7rem">🚉 ${ap.station}</span>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function openApplicantModal(id){
+  currentApplicantId = id;
+  apUploadedFiles = [];
+  document.getElementById('upload-files').innerHTML = '';
+
+  // 媒体・面接官プルダウン更新
+  document.getElementById('f-media').innerHTML =
+    '<option value="">選択してください</option>' +
+    MEDIA.map(m=>`<option value="${m.name}">${m.name}</option>`).join('');
+  document.getElementById('f-interviewer').innerHTML =
+    '<option value="">未割当</option>' +
+    INTERVIEWERS.map(iv=>`<option value="${iv.name}">${iv.name}</option>`).join('');
+
+  if(id){
+    const ap = APPLICANTS.find(a=>a.id===id);
+    if(ap){ fillForm(ap); }
+    document.getElementById('modal-title').textContent = '応募者編集';
+  } else {
+    clearForm();
+    document.getElementById('modal-title').textContent = '応募者登録';
+    document.getElementById('f-apply-date').value = new Date().toISOString().slice(0,10);
+  }
+  document.getElementById('ap-modal').style.display = 'block';
+}
+
+function closeApplicantModal(){
+  document.getElementById('ap-modal').style.display = 'none';
+  apUploadedFiles = [];
+}
+
+function clearForm(){
+  clearPhoto();
+  window._apPhotoData = null;
+  ['name','kana','dob','age','gender','education','phone','email','address','station','commute',
+   'exp-years','job-changes','current-salary','desired-salary','pc-skills','licenses','recent-job',
+   'media','apply-date','status','interviewer','join-month','resign-status','night-shift','shift',
+   'other-companies','health','notes'].forEach(k=>{
+    const el = document.getElementById('f-'+k);
+    if(el) el.value = '';
+  });
+  document.getElementById('f-status').value = '書類選考中';
+}
+
+function fillForm(ap){
+  // 顔写真
+  if(ap.photo){ setPhotoPreview(ap.photo); } else { clearPhoto(); }
+  const map = {
+    'name':ap.name,'kana':ap.kana,'dob':ap.dob,'age':ap.age,'gender':ap.gender,
+    'education':ap.education,'phone':ap.phone,'email':ap.email,'address':ap.address,
+    'station':ap.station,'commute':ap.commute,'exp-years':ap.expYears,
+    'job-changes':ap.jobChanges,'current-salary':ap.currentSalary,'desired-salary':ap.desiredSalary,
+    'pc-skills':ap.pcSkills,'licenses':ap.licenses,'recent-job':ap.recentJob,
+    'media':ap.media,'apply-date':ap.applyDate,'status':ap.status,
+    'interviewer':ap.interviewer,'join-month':ap.joinMonth,'resign-status':ap.resignStatus,
+    'night-shift':ap.nightShift,'shift':ap.shift,'other-companies':ap.otherCompanies,
+    'health':ap.health,'notes':ap.notes,
+  };
+  Object.entries(map).forEach(([k,v])=>{
+    const el = document.getElementById('f-'+k);
+    if(el && v!=null) el.value = v;
+  });
+}
+
+function collectForm(){
+  const g = id => document.getElementById('f-'+id)?.value||'';
+  return {
+    id: currentApplicantId || ('ap_'+Date.now()),
+    photo: window._apPhotoData || null,
+    name:g('name'), kana:g('kana'), dob:g('dob'), age:g('age'), gender:g('gender'),
+    education:g('education'), phone:g('phone'), email:g('email'), address:g('address'),
+    station:g('station'), commute:g('commute'), expYears:g('exp-years'),
+    jobChanges:g('job-changes'), currentSalary:g('current-salary'), desiredSalary:g('desired-salary'),
+    pcSkills:g('pc-skills'), licenses:g('licenses'), recentJob:g('recent-job'),
+    media:g('media'), applyDate:g('apply-date'), status:g('status'),
+    interviewer:g('interviewer'), joinMonth:g('join-month'), resignStatus:g('resign-status'),
+    nightShift:g('night-shift'), shift:g('shift'), otherCompanies:g('other-companies'),
+    health:g('health'), notes:g('notes'),
+  };
+}
+
+function saveApplicant(){
+  const ap = collectForm();
+  if(!ap.name){ alert('氏名は必須です'); return; }
+  const idx = APPLICANTS.findIndex(a=>a.id===ap.id);
+  if(idx>=0) APPLICANTS[idx]=ap; else APPLICANTS.push(ap);
+  saveApplicants();
+  closeApplicantModal();
+  filterApplicants();
+}
+
+function deleteApplicant(id){
+  if(!confirm('この応募者を削除しますか？')) return;
+  APPLICANTS = APPLICANTS.filter(a=>a.id!==id);
+  saveApplicants();
+  filterApplicants();
+}
+
+
+// ===== 顔写真処理 =====
+function handlePhotoSelect(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => setPhotoPreview(e.target.result);
+  reader.readAsDataURL(file);
+}
+function setPhotoPreview(dataUrl){
+  const img = document.getElementById('photo-preview');
+  const placeholder = document.getElementById('photo-placeholder');
+  const clearBtn = document.getElementById('photo-clear-btn');
+  if(img){ img.src = dataUrl; img.style.display = 'block'; }
+  if(placeholder) placeholder.style.display = 'none';
+  if(clearBtn) clearBtn.style.display = 'block';
+  window._apPhotoData = dataUrl;
+}
+function clearPhoto(){
+  const img = document.getElementById('photo-preview');
+  const placeholder = document.getElementById('photo-placeholder');
+  const clearBtn = document.getElementById('photo-clear-btn');
+  if(img){ img.style.display = 'none'; img.src = ''; }
+  if(placeholder) placeholder.style.display = '';
+  if(clearBtn) clearBtn.style.display = 'none';
+  window._apPhotoData = null;
+  document.getElementById('photo-upload').value = '';
+}
+// ===== ファイルアップロード =====
+function handleFileSelect(input){
+  Array.from(input.files).forEach(f=>processResumeFile(f));
+}
+function handleFileDrop(e){
+  e.preventDefault();
+  document.getElementById('upload-area').style.borderColor='rgba(0,245,212,.3)';
+  Array.from(e.dataTransfer.files).forEach(f=>processResumeFile(f));
+}
+
+function processResumeFile(file){
+  const el = document.getElementById('upload-files');
+  const tag = document.createElement('div');
+  tag.style.cssText='background:rgba(0,245,212,.08);border:1px solid rgba(0,245,212,.3);color:var(--cyan);padding:4px 10px;border-radius:5px;font-size:.72rem;font-family:Space Mono,monospace;display:flex;align-items:center;gap:6px';
+  tag.innerHTML=`📄 ${file.name} <span style="cursor:pointer;opacity:.6" onclick="this.parentNode.remove()">×</span>`;
+  el.appendChild(tag);
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const base64 = e.target.result.split(',')[1];
+    const mtype = file.type || 'application/pdf';
+    await analyzeResumeWithAI(base64, mtype, file.name);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analyzeResumeWithAI(base64, mediaType, fileName){
+  const statusEl = document.getElementById('modal-ai-status');
+  statusEl.style.display = 'block';
+  statusEl.textContent = '✦ AI解析中... ' + fileName;
+
+  try {
+    // 画像かPDFかで分岐
+    const isImage = mediaType.startsWith('image/');
+    const isPDF   = mediaType === 'application/pdf';
+
+    let contentBlock;
+    if(isImage){
+      contentBlock = { type:'image', source:{ type:'base64', media_type:mediaType, data:base64 }};
+    } else if(isPDF){
+      contentBlock = { type:'document', source:{ type:'base64', media_type:'application/pdf', data:base64 }};
+    } else {
+      statusEl.textContent = '⚠ このファイル形式はAI解析非対応です（PDF/画像のみ）';
+      setTimeout(()=>statusEl.style.display='none',3000);
+      return;
+    }
+
+    const prompt = `この履歴書・職務経歴書から以下の情報をすべて抽出してください。
+見つからない項目はnullにしてください。
+必ずJSON形式のみで返してください（説明文不要）：
+
+{
+  "name": "氏名",
+  "kana": "フリガナ",
+  "dob": "生年月日（YYYY-MM-DD形式）",
+  "age": 年齢の数値,
+  "gender": "性別",
+  "education": "最終学歴（学校名・学部）",
+  "phone": "電話番号",
+  "email": "メールアドレス",
+  "address": "住所",
+  "station": "最寄り駅",
+  "commute": "想定通勤時間",
+  "expYears": 社会人経験年数の数値,
+  "jobChanges": 転職回数の数値,
+  "currentSalary": 現年収の数値（万円単位）,
+  "desiredSalary": 希望年収の数値（万円単位）,
+  "pcSkills": "PCスキル（Excel/Word/その他ツール）の詳細",
+  "licenses": "資格・免許のリスト",
+  "recentJob": "直近の職務内容・業務経験の要約",
+  "nightShift": "夜勤可否（可/不可/要相談）",
+  "shift": "シフト可否（可/不可/要相談）",
+  "health": "既往歴・健康状態の特記事項",
+  "notes": "その他特記事項・自己PR要約"
+}`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1500,
+        messages:[{ role:'user', content:[contentBlock,{type:'text',text:prompt}]}]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.map(c=>c.text||'').join('').trim();
+    const json = text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(json);
+
+    // フォームに反映
+    const fieldMap = {
+      name:'name', kana:'kana', dob:'dob', age:'age', gender:'gender',
+      education:'education', phone:'phone', email:'email', address:'address',
+      station:'station', commute:'commute', expYears:'exp-years',
+      jobChanges:'job-changes', currentSalary:'current-salary', desiredSalary:'desired-salary',
+      pcSkills:'pc-skills', licenses:'licenses', recentJob:'recent-job',
+      nightShift:'night-shift', shift:'shift', health:'health', notes:'notes',
+    };
+    Object.entries(fieldMap).forEach(([key,fid])=>{
+      if(parsed[key]!=null && parsed[key]!=''){
+        const el = document.getElementById('f-'+fid);
+        if(el) el.value = parsed[key];
+      }
+    });
+
+    statusEl.style.background = 'rgba(67,233,123,.08)';
+    statusEl.style.borderColor = 'rgba(67,233,123,.3)';
+    statusEl.style.color = '#43E97B';
+    statusEl.textContent = '✓ AI解析完了！情報を反映しました';
+    setTimeout(()=>{ statusEl.style.display='none'; statusEl.style.background='rgba(0,245,212,.05)'; statusEl.style.borderColor='rgba(0,245,212,.3)'; statusEl.style.color='var(--cyan)'; }, 4000);
+
+  } catch(err){
+    console.error(err);
+    statusEl.style.background = 'rgba(255,107,107,.08)';
+    statusEl.style.borderColor = 'rgba(255,107,107,.3)';
+    statusEl.style.color = '#FF6B6B';
+    statusEl.textContent = '⚠ AI解析エラー。手動で入力してください';
+    setTimeout(()=>statusEl.style.display='none', 4000);
+  }
+}
+
+
+// ========== AGENTS ==========
+
+const DEFAULT_AGENTS = [{"id": "ag_0", "name": "circus株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_1", "name": "株式会社ROXX", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_2", "name": "パーソルキャリア株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_3", "name": "株式会社ユニゾン・テクノロジー", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_4", "name": "株式会社UZUZ", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_5", "name": "株式会社ネオアクト", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_6", "name": "株式会社ミギナナメウエ", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_7", "name": "株式会社freemova", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_8", "name": "株式会社エージェントキューブ", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_9", "name": "株式会社キャリアデザインセンター", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_10", "name": "ポート株式会社（既卒・第二新卒）", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_11", "name": "株式会社NEWGATE", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_12", "name": "レバテック株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_13", "name": "株式会社HRteam", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_14", "name": "株式会社エンデバース", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_15", "name": "株式会社バディデータ", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_16", "name": "株式会社トップデータ", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_17", "name": "株式会社ツナグバ", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_18", "name": "株式会社Onfleek", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_19", "name": "株式会社ホールハートエージェント", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_20", "name": "セルプロモート株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_21", "name": "JHR株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_22", "name": "株式会社For A-career", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_23", "name": "株式会社ウィルオブ・ワーク", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_24", "name": "株式会社インフラトップ", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_25", "name": "株式会社ミクス", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_26", "name": "株式会社ヒューガン", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_27", "name": "株式会社ラストデータ", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_28", "name": "株式会社マイナビ", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_29", "name": "株式会社キッカケクリエイション", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_30", "name": "株式会社ネオキャリア", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_31", "name": "株式会社エスアイイー", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_32", "name": "株式会社UPSET", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_33", "name": "株式会社ユニティ（Unity）", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_34", "name": "株式会社フレンドツリー", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_35", "name": "株式会社ファーストデータ", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_36", "name": "株式会社ビジョン・キャリア", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_37", "name": "株式会社ステイドリーム", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_38", "name": "株式会社キミノミライ", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_39", "name": "株式会社アイデム", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_40", "name": "インターノウス株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_41", "name": "株式会社Zhienius", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_42", "name": "キャリアスタート株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_43", "name": "株式会社michibiki", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_44", "name": "株式会社MAP", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_45", "name": "株式会社ワークポート", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_46", "name": "株式会社JoB-up", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_47", "name": "株式会社Revengers", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_48", "name": "株式会社RYOMA", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_49", "name": "株式会社MOFMOF", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_50", "name": "株式会社Peter Pan", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_51", "name": "株式会社CloudLink", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_52", "name": "株式会社Stella Point", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_53", "name": "株式会社KAND", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_54", "name": "Mirise up株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_55", "name": "株式会社ビズリンクキャリア", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_56", "name": "株式会社HARE", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_57", "name": "合同会社H CAREER", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_58", "name": "MakeCareer株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_59", "name": "株式会社Atip", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_60", "name": "株式会社RE BOND's", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_61", "name": "SUNKLIS株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_62", "name": "WorX株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_63", "name": "株式会社プロキオン", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_64", "name": "株式会社ぱそふる", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_65", "name": "株式会社YNP", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_66", "name": "株式会社ANCa", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_67", "name": "株式会社オーダーワークス", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_68", "name": "株式会社ポテパン", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_69", "name": "テクノブレーン株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_70", "name": "株式会社サーヴァント", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_71", "name": "株式会社Personal", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_72", "name": "株式会社Maenomery", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_73", "name": "ミライズ株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_74", "name": "株式会社Alits", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_75", "name": "kaiketsu株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_76", "name": "株式会社マイナビワークス", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_77", "name": "株式会社2peace", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_78", "name": "りくらぼ株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_79", "name": "株式会社プレックス", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_80", "name": "株式会社ダイバース", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_81", "name": "株式会社Bolder", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_82", "name": "株式会社さくら", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_83", "name": "株式会社昼job", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_84", "name": "株式会社オルベルトワークス", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_85", "name": "株式会社アップコム", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_86", "name": "株式会社FBent", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_87", "name": "株式会社タレントキャリア", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_88", "name": "Ann株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_89", "name": "株式会社OnYourMark", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_90", "name": "ブライエッジ株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_91", "name": "株式会社SHIFT", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_92", "name": "ジャパン株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_93", "name": "株式会社DRIX", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_94", "name": "株式会社アイ・ディ・エイチ", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_95", "name": "株式会社キカガク", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_96", "name": "職人メディア株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_97", "name": "株式会社クエストラボ", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_98", "name": "株式会社コンフィデンス・インターワークス", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_99", "name": "Youtopia株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_100", "name": "株式会社AGENT SUCCESS", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_101", "name": "スキルブリッジ株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_102", "name": "株式会社エージェントシェア", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_103", "name": "株式会社日本エネルギー機構（新社名：HJ株式会社）", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_104", "name": "株式会社Ignite", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_105", "name": "株式会社ペイフォワード", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_106", "name": "株式会社ReAM", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_107", "name": "PISTEC株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_108", "name": "合同会社Berkolle", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_109", "name": "Staneer株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_110", "name": "株式会社ReWave", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_111", "name": "株式会社トレオン", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_112", "name": "株式会社Lupinus（締結中）", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_113", "name": "株式会社キャリアビート", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_114", "name": "シェアジャパン株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_115", "name": "株式会社Hajimari", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}, {"id": "ag_116", "name": "MASTER key株式会社", "priority": "", "category": "ITエンジニア", "feeInexperienced": "", "feeExperienced": "", "contactName": "", "contactTel": "", "contactEmail": "", "introductions": 0, "docPass": 0, "firstPass": 0, "secondPass": 0, "offers": 0, "acceptances": 0, "notes": ""}];
+
+let AGENTS = JSON.parse(JSON.stringify(DEFAULT_AGENTS));
+let currentAgentId = null;
+
+const PRIORITY_COLORS = {'〇':'#43E97B','△':'#FFE66D','✖':'#FF6B6B','新':'#00F5D4'};
+const PRIORITY_BG = {'〇':'rgba(67,233,123,.1)','△':'rgba(255,230,109,.1)','✖':'rgba(255,107,107,.1)','新':'rgba(0,245,212,.1)'};
+
+function loadAgents(){
+  try {
+    const saved = localStorage.getItem('ro_agents');
+    if(saved) AGENTS = JSON.parse(saved);
+  } catch(e){}
+}
+
+function saveAgentsData(){
+  try { localStorage.setItem('ro_agents', JSON.stringify(AGENTS)); } catch(e){}
+}
+
+let agentStatusFilter = 'all';
+let currentAgentStatusEdit = 'active'; // モーダル内の状態
+
+// 応募者管理から各エージェントの実績を自動集計
+function calcAgentStats(agentName){
+  const apList = APPLICANTS.filter(ap => ap.media === agentName);
+  const PASS_STATUSES = ['書類通過','一次面接調整中','一次面接済','一次通過','一次NG','二次面接調整中','二次面接済','二次通過','二次NG','内定','承諾','辞退'];
+  const FIRST_PASS_STATUSES = ['一次通過','二次面接調整中','二次面接済','二次通過','二次NG','内定','承諾','辞退'];
+  const SECOND_PASS_STATUSES = ['二次通過','内定','承諾','辞退'];
+  const OFFER_STATUSES = ['内定','承諾','辞退'];
+  const ACCEPT_STATUSES = ['承諾'];
+  return {
+    introductions: apList.length,
+    docPass: apList.filter(ap => PASS_STATUSES.includes(ap.status)).length,
+    firstPass: apList.filter(ap => FIRST_PASS_STATUSES.includes(ap.status)).length,
+    secondPass: apList.filter(ap => SECOND_PASS_STATUSES.includes(ap.status)).length,
+    offers: apList.filter(ap => OFFER_STATUSES.includes(ap.status)).length,
+    acceptances: apList.filter(ap => ACCEPT_STATUSES.includes(ap.status)).length,
+  };
+}
+
+function setAgentStatusFilter(status, el){
+  agentStatusFilter = status;
+  ['agf-all','agf-active','agf-inactive'].forEach(id=>{
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    const key = id.replace('agf-','');
+    const active = key === status;
+    if(key === 'active'){
+      btn.style.background = active ? 'rgba(67,233,123,.1)' : 'transparent';
+      btn.style.color = active ? '#43E97B' : 'var(--t2)';
+    } else if(key === 'inactive'){
+      btn.style.background = active ? 'rgba(255,107,107,.1)' : 'transparent';
+      btn.style.color = active ? '#FF6B6B' : 'var(--t2)';
+    } else {
+      btn.style.background = active ? 'rgba(0,245,212,.1)' : 'transparent';
+      btn.style.color = active ? 'var(--cyan)' : 'var(--t2)';
+    }
+    btn.style.fontWeight = active ? '600' : '400';
+  });
+  filterAgents();
+}
+
+function setAgentStatus(status){
+  currentAgentStatusEdit = status;
+  const activeBtn = document.getElementById('ag-status-active');
+  const inactiveBtn = document.getElementById('ag-status-inactive');
+  if(status === 'active'){
+    activeBtn.style.background = 'rgba(67,233,123,.1)';
+    activeBtn.style.borderColor = 'rgba(67,233,123,.5)';
+    activeBtn.style.color = '#43E97B';
+    activeBtn.style.fontWeight = '700';
+    inactiveBtn.style.background = 'transparent';
+    inactiveBtn.style.borderColor = 'var(--border)';
+    inactiveBtn.style.color = 'var(--t2)';
+    inactiveBtn.style.fontWeight = '400';
+  } else {
+    inactiveBtn.style.background = 'rgba(255,107,107,.1)';
+    inactiveBtn.style.borderColor = 'rgba(255,107,107,.5)';
+    inactiveBtn.style.color = '#FF6B6B';
+    inactiveBtn.style.fontWeight = '700';
+    activeBtn.style.background = 'transparent';
+    activeBtn.style.borderColor = 'rgba(67,233,123,.3)';
+    activeBtn.style.color = 'var(--t3)';
+    activeBtn.style.fontWeight = '400';
+  }
+}
+
+function renderAgents(){
+  loadAgents();
+  filterAgents();
+}
+
+function filterAgents(){
+  const search = (document.getElementById('ag-search')?.value||'').toLowerCase();
+  const priority = document.getElementById('ag-filter-priority')?.value||'';
+  const filtered = AGENTS.filter(ag=>{
+    const matchSearch = !search ||
+      (ag.name||'').toLowerCase().includes(search) ||
+      (ag.contactName||'').toLowerCase().includes(search);
+    const matchPriority = !priority || ag.priority===priority;
+    const matchStatus = agentStatusFilter==='all' || (ag.agentStatus||'active')===agentStatusFilter;
+    return matchSearch && matchPriority && matchStatus;
+  });
+  document.getElementById('ag-count').textContent = filtered.length+' / '+AGENTS.length+' 社';
+  renderAgentList(filtered);
+}
+
+function renderAgentList(list){
+  const el = document.getElementById('ag-list');
+  if(!list.length){
+    el.innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--t2)"><div style="font-size:2rem;margin-bottom:12px;opacity:.4">🏢</div><div style="font-size:.88rem">エージェントが見つかりません</div></div>';
+    return;
+  }
+
+  // 応募者データから自動集計（各エージェントの実績を上書き）
+  const enriched = list.map(ag=>{
+    const stats = calcAgentStats(ag.name);
+    // 手動入力が0の場合は自動集計を使用、手動で上書きされていたらそちらを優先
+    return {
+      ...ag,
+      _introductions: stats.introductions || ag.introductions || 0,
+      _docPass: stats.docPass || ag.docPass || 0,
+      _firstPass: stats.firstPass || ag.firstPass || 0,
+      _secondPass: stats.secondPass || ag.secondPass || 0,
+      _offers: stats.offers || ag.offers || 0,
+      _acceptances: stats.acceptances || ag.acceptances || 0,
+      _autoStats: stats.introductions > 0, // 自動集計データがあるかフラグ
+    };
+  });
+
+  // KPIサマリー
+  const totalIntros = enriched.reduce((s,ag)=>s+(ag._introductions||0),0);
+  const totalAccepts = enriched.reduce((s,ag)=>s+(ag._acceptances||0),0);
+
+  el.innerHTML = `
+    <!-- サマリーカード -->
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px">
+      ${[
+        {label:'取引社数',value:list.length+'社',color:'#00F5D4'},
+        {label:'総紹介数',value:list.reduce((s,ag)=>s+(ag.introductions||0),0)+'件',color:'#7B61FF'},
+        {label:'書類通過',value:list.reduce((s,ag)=>s+(ag.docPass||0),0)+'件',color:'#FFE66D'},
+        {label:'内定数',value:list.reduce((s,ag)=>s+(ag.offers||0),0)+'件',color:'#F8A5C2'},
+        {label:'承諾数',value:list.reduce((s,ag)=>s+(ag.acceptances||0),0)+'件',color:'#43E97B'},
+        {label:'承諾率',value:totalIntros>0?Math.round(totalAccepts/totalIntros*100)+'%':'—',color:'#FF9F43'},
+      ].map(k=>`
+        <div class="kpi-card" style="padding:12px 14px">
+          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${k.color}"></div>
+          <div class="kpi-label">${k.label}</div>
+          <div style="font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;color:${k.color};margin-top:5px">${k.value}</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- テーブル -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.78rem">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border)">
+              <th style="text-align:left;padding:12px 14px;color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem;white-space:nowrap">会社名</th>
+              <th style="text-align:center;padding:12px 10px;color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem">優先度</th>
+              <th style="text-align:left;padding:12px 10px;color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem">担当者</th>
+              <th style="text-align:left;padding:12px 10px;color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem">TEL / メール</th>
+              <th style="text-align:right;padding:12px 8px;color:#7B61FF;font-family:'Space Mono',monospace;font-size:.62rem">紹介</th>
+              <th style="text-align:right;padding:12px 8px;color:#FFE66D;font-family:'Space Mono',monospace;font-size:.62rem">書類通過</th>
+              <th style="text-align:right;padding:12px 8px;color:#F8A5C2;font-family:'Space Mono',monospace;font-size:.62rem">一次通過</th>
+              <th style="text-align:right;padding:12px 8px;color:#FF9F43;font-family:'Space Mono',monospace;font-size:.62rem">二次通過</th>
+              <th style="text-align:right;padding:12px 8px;color:'#4ECDC4';font-family:'Space Mono',monospace;font-size:.62rem">内定</th>
+              <th style="text-align:right;padding:12px 8px;color:#43E97B;font-family:'Space Mono',monospace;font-size:.62rem">承諾</th>
+              <th style="text-align:right;padding:12px 8px;color:#FF9F43;font-family:'Space Mono',monospace;font-size:.62rem">承諾率</th>
+              <th style="text-align:right;padding:12px 8px;color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem">未経験料率</th>
+              <th style="text-align:right;padding:12px 8px;color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem">経験者料率</th>
+              <th style="padding:12px 8px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${enriched.map(ag=>{
+              const pc = PRIORITY_COLORS[ag.priority]||'var(--t3)';
+              const pb = PRIORITY_BG[ag.priority]||'transparent';
+              const intro = ag._introductions;
+              const accept = ag._acceptances;
+              const rate = intro>0?Math.round(accept/intro*100):null;
+              const rc = rate!=null?(rate>=30?'#43E97B':rate>=15?'#FFE66D':'#FF6B6B'):'var(--t3)';
+              const isActive = (ag.agentStatus||'active')==='active';
+              return `<tr style="border-bottom:1px solid rgba(26,42,69,.5);transition:background .15s;cursor:pointer;opacity:${isActive?1:0.55}"
+                onclick="openAgentModal('${ag.id}')"
+                onmouseover="this.style.background='var(--card2)'"
+                onmouseout="this.style.background='transparent'">
+                <td style="padding:10px 14px">
+                  <div style="display:flex;align-items:center;gap:7px">
+                    <div style="color:var(--t1);font-weight:600;font-size:.82rem">${ag.name}</div>
+                    <span style="background:${isActive?'rgba(67,233,123,.1)':'rgba(255,107,107,.08)'};color:${isActive?'#43E97B':'#FF6B6B'};border:1px solid ${isActive?'rgba(67,233,123,.3)':'rgba(255,107,107,.3)'};font-size:.6rem;font-family:'Space Mono',monospace;padding:1px 6px;border-radius:3px;flex-shrink:0">${isActive?'利用中':'停止中'}</span>
+                    ${ag._autoStats?`<span style="background:rgba(0,245,212,.06);color:var(--cyan);font-size:.58rem;font-family:'Space Mono',monospace;padding:1px 5px;border-radius:3px;border:1px solid rgba(0,245,212,.2)">AUTO</span>`:''}
+                  </div>
+                  ${ag.notes?`<div style="color:var(--t3);font-size:.68rem;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">${ag.notes}</div>`:''}
+                </td>
+                <td style="text-align:center;padding:10px 10px">
+                  ${ag.priority?`<span style="background:${pb};color:${pc};border:1px solid ${pc}44;font-family:'Space Mono',monospace;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:4px">${ag.priority}</span>`:
+                  '<span style="color:var(--t3);font-size:.7rem">—</span>'}
+                </td>
+                <td style="padding:10px 10px;color:var(--t2);font-size:.78rem">${ag.contactName||'—'}</td>
+                <td style="padding:10px 10px">
+                  ${ag.contactTel?`<div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.7rem">${ag.contactTel}</div>`:''}
+                  ${ag.contactEmail?`<div style="color:var(--t3);font-size:.68rem">${ag.contactEmail}</div>`:''}
+                  ${!ag.contactTel&&!ag.contactEmail?'<span style="color:var(--t3)">—</span>':''}
+                </td>
+                <td style="text-align:right;padding:10px 8px;color:#7B61FF;font-family:'Space Mono',monospace;font-size:.75rem">${intro}</td>
+                <td style="text-align:right;padding:10px 8px;color:#FFE66D;font-family:'Space Mono',monospace;font-size:.75rem">${ag._docPass||0}</td>
+                <td style="text-align:right;padding:10px 8px;color:#F8A5C2;font-family:'Space Mono',monospace;font-size:.75rem">${ag._firstPass||0}</td>
+                <td style="text-align:right;padding:10px 8px;color:#FF9F43;font-family:'Space Mono',monospace;font-size:.75rem">${ag._secondPass||0}</td>
+                <td style="text-align:right;padding:10px 8px;color:#4ECDC4;font-family:'Space Mono',monospace;font-size:.75rem">${ag._offers||0}</td>
+                <td style="text-align:right;padding:10px 8px;color:#43E97B;font-family:'Space Mono',monospace;font-size:.75rem;font-weight:700">${accept}</td>
+                <td style="text-align:right;padding:10px 8px;font-family:'Space Mono',monospace;font-size:.75rem;color:${rc};font-weight:700">
+                  ${rate!=null?rate+'%':'—'}
+                </td>
+                <td style="text-align:right;padding:10px 8px;color:var(--t2);font-family:'Space Mono',monospace;font-size:.72rem">${ag.feeInexperienced?ag.feeInexperienced+'%':'—'}</td>
+                <td style="text-align:right;padding:10px 8px;color:var(--t2);font-family:'Space Mono',monospace;font-size:.72rem">${ag.feeExperienced?ag.feeExperienced+'%':'—'}</td>
+                <td style="padding:10px 8px;text-align:right">
+                  <button onclick="event.stopPropagation();toggleAgentStatus('${ag.id}')" title="${isActive?'停止にする':'利用中にする'}"
+                    style="padding:3px 8px;border-radius:4px;border:1px solid ${isActive?'rgba(255,107,107,.4)':'rgba(67,233,123,.4)'};background:${isActive?'rgba(255,107,107,.08)':'rgba(67,233,123,.08)'};color:${isActive?'#FF6B6B':'#43E97B'};cursor:pointer;font-size:.65rem;font-family:'Space Mono',monospace;transition:all .2s;margin-right:4px">
+                    ${isActive?'停止':'再開'}
+                  </button>
+                  <button onclick="event.stopPropagation();deleteAgent('${ag.id}')" class="del-btn" title="削除">×</button>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function toggleAgentStatus(id){
+  const ag = AGENTS.find(a=>a.id===id);
+  if(!ag) return;
+  ag.agentStatus = (ag.agentStatus||'active')==='active' ? 'inactive' : 'active';
+  saveAgentsData();
+  filterAgents();
+}
+
+function openAgentModal(id){
+  currentAgentId = id;
+  if(id){
+    const ag = AGENTS.find(a=>a.id===id);
+    if(ag){
+      document.getElementById('ag-name').value = ag.name||'';
+      document.getElementById('ag-priority').value = ag.priority||'';
+      document.getElementById('ag-category').value = ag.category||'ITエンジニア';
+      document.getElementById('ag-fee-inexperienced').value = ag.feeInexperienced||'';
+      document.getElementById('ag-fee-experienced').value = ag.feeExperienced||'';
+      document.getElementById('ag-contact-name').value = ag.contactName||'';
+      document.getElementById('ag-contact-tel').value = ag.contactTel||'';
+      document.getElementById('ag-contact-email').value = ag.contactEmail||'';
+      // 利用状況
+      setAgentStatus(ag.agentStatus||'active');
+      // 実績：応募者管理から自動集計して表示（参考値）
+      const autoStats = calcAgentStats(ag.name);
+      document.getElementById('ag-introductions').value = autoStats.introductions || ag.introductions||0;
+      document.getElementById('ag-doc-pass').value = autoStats.docPass || ag.docPass||0;
+      document.getElementById('ag-first-pass').value = autoStats.firstPass || ag.firstPass||0;
+      document.getElementById('ag-second-pass').value = autoStats.secondPass || ag.secondPass||0;
+      document.getElementById('ag-offers').value = autoStats.offers || ag.offers||0;
+      document.getElementById('ag-acceptances').value = autoStats.acceptances || ag.acceptances||0;
+      document.getElementById('ag-notes').value = ag.notes||'';
+    }
+    document.getElementById('ag-modal-title').textContent = 'エージェント編集';
+  } else {
+    ['ag-name','ag-priority','ag-fee-inexperienced','ag-fee-experienced',
+     'ag-contact-name','ag-contact-tel','ag-contact-email','ag-notes'].forEach(id=>{
+      document.getElementById(id).value='';
+    });
+    ['ag-introductions','ag-doc-pass','ag-first-pass','ag-second-pass','ag-offers','ag-acceptances'].forEach(id=>{
+      document.getElementById(id).value=0;
+    });
+    document.getElementById('ag-modal-title').textContent = 'エージェント登録';
+  }
+  document.getElementById('ag-modal').style.display = 'block';
+}
+
+function closeAgentModal(){
+  document.getElementById('ag-modal').style.display = 'none';
+}
+
+function saveAgent(){
+  const g = id => document.getElementById(id)?.value||'';
+  const n = id => Number(document.getElementById(id)?.value)||0;
+  const ag = {
+    id: currentAgentId || ('ag_'+Date.now()),
+    agentStatus: currentAgentStatusEdit,
+    name: g('ag-name'), priority: g('ag-priority'), category: g('ag-category'),
+    feeInexperienced: g('ag-fee-inexperienced'), feeExperienced: g('ag-fee-experienced'),
+    contactName: g('ag-contact-name'), contactTel: g('ag-contact-tel'), contactEmail: g('ag-contact-email'),
+    introductions: n('ag-introductions'), docPass: n('ag-doc-pass'),
+    firstPass: n('ag-first-pass'), secondPass: n('ag-second-pass'),
+    offers: n('ag-offers'), acceptances: n('ag-acceptances'),
+    notes: g('ag-notes'),
+  };
+  if(!ag.name){ alert('会社名は必須です'); return; }
+  const idx = AGENTS.findIndex(a=>a.id===ag.id);
+  if(idx>=0) AGENTS[idx]=ag; else AGENTS.push(ag);
+  saveAgentsData();
+  closeAgentModal();
+  filterAgents();
+}
+
+function deleteAgent(id){
+  if(!confirm('このエージェントを削除しますか？')) return;
+  AGENTS = AGENTS.filter(a=>a.id!==id);
+  saveAgentsData();
+  filterAgents();
+}
 // ========== INIT ==========
 loadSavedData();
 loadWikiData();
+loadApplicants();
+loadAgents();
 renderDashboard();
 
+
+// ========== IT職種 Wiki ==========
+const IT_JOBS = [
+  {
+    "category": "システムエンジニア（開発）",
+    "categoryDesc": "システムの設計や開発を担当するエンジニア。多くの企業で必要とされる。",
+    "color": "#00F5D4",
+    "jobs": [
+      {
+        "title": "SE（システムエンジニア）",
+        "work": "システムの設計を担当",
+        "detail": "開発プロジェクトや開発チームの管理を担当。プログラムやソフトウェア設計書の作成が主な仕事。",
+        "salary": "438万円",
+        "suitable": "コミュニケーション能力が高い／論理的思考ができる／変化やトラブルに柔軟に対応できる／メンタルが強く体力がある",
+        "future": "クライアントにとっての窓口となるSEの需要は高く、年間を通じて募集している企業も多い。IT業界全体で慢性的な人手不足のため将来性は高い。",
+        "futureRating": "高"
+      },
+      {
+        "title": "プログラマー",
+        "work": "仕様書を基にプログラミングをする",
+        "detail": "ソフトウェア開発を担当。コンピュータープログラムの設計・開発・テスト・保守が主な仕事。新しい技術やプログラミング言語を継続的に学ぶ必要がある。",
+        "salary": "434万円",
+        "suitable": "協調性がある人。チームで動くことが多く、納期調整やスケジュール共有が必要。様々なプログラミング言語を習得していく意欲がある人。",
+        "future": "需要はこの数年で大幅に減少する可能性は低く将来性はある。プログラミング自動化技術が進んでいるが、現状プログラマーの存在を脅かすレベルではない。",
+        "futureRating": "中"
+      },
+      {
+        "title": "アプリケーションエンジニア",
+        "work": "アプリやゲームなどを開発する",
+        "detail": "アプリやゲームなどの開発を担当。要件定義・設計・開発・テスト・運用・保守等、一連の開発工程すべてに携わる。",
+        "salary": "562万円",
+        "suitable": "人に感謝される仕事がしたい人／世の中に新しいサービスを生み出し、人々の生活をより豊かにしたい人",
+        "future": "Webサービスの普及に伴い将来性は高い。キャリアパスは幅広く、将来は上流工程・社内SE・コンサルタントとしても活躍可能。",
+        "futureRating": "高"
+      }
+    ]
+  },
+  {
+    "category": "WEBエンジニア（開発）",
+    "categoryDesc": "Webサイトの作成やWeb向けのアプリケーション開発を行うエンジニア。エンジニアの中では女性も多い職種。",
+    "color": "#7B61FF",
+    "jobs": [
+      {
+        "title": "フロントエンドエンジニア",
+        "work": "ユーザーが直接見る場所を開発する",
+        "detail": "WebページやアプリケーションのUI（ユーザーインターフェイス）の設計・開発を担当。ユーザーが快適に操作できるUI構築が主な仕事。",
+        "salary": "599万円",
+        "suitable": "新しい技術に興味を持ち知識をアップデートできる人／サービス精神が旺盛な人／ユーザーの気持ちに寄り添える人／地道な作業が苦にならない人",
+        "future": "Webサイト需要増加により短期的な将来性は明るい。ただしAIなどの技術進化によって長期的な将来性は一部不安視される面もある。",
+        "futureRating": "中"
+      },
+      {
+        "title": "バックエンドエンジニア",
+        "work": "ユーザーの見えない部分の開発や構築を担う",
+        "detail": "Webサービスやアプリケーションのサーバーサイドの開発を担当。フロントエンドと密接に連携し、高度な機能を提供するWebサービス開発が主な仕事。",
+        "salary": "880万円",
+        "suitable": "裏方として技術を駆使して業務を進めたい人。実際に開発したものがユーザーに直接評価されるわけではない点を理解している人。",
+        "future": "ネット社会に欠かせない重要な仕事で需要が非常に高い。根本的な土台を設計するため仕事の幅が広く、求人も多い。安定的な将来性がある。",
+        "futureRating": "高"
+      },
+      {
+        "title": "スマホアプリ・ゲームエンジニア",
+        "work": "スマートフォン向けのアプリを開発する",
+        "detail": "スマホゲームの開発がメイン。ゲームクリエイターとの打ち合わせでゲーム内容や仕様を決め、制作することが主な仕事。",
+        "salary": "471万円",
+        "suitable": "チームワークを発揮して仕事ができてモノ作りが好きな人。「ゲームが好き」という理由だけではミスマッチになる可能性があることに注意。",
+        "future": "ゲーム業界はトレンドの変化が早く人材が不足しており需要が高い。スマホゲームユーザーの増加により多種多様なエンジニアが必要とされる。",
+        "futureRating": "高"
+      }
+    ]
+  },
+  {
+    "category": "機械系のエンジニア",
+    "categoryDesc": "実際に機械の製作や設計を行うエンジニア。",
+    "color": "#FF6B6B",
+    "jobs": [
+      {
+        "title": "組込みエンジニア",
+        "work": "家電用品などにプログラムを組み込む",
+        "detail": "電子機器や制御システム等に組み込まれるソフトウェア開発を担当。自動車・家電・医療機器など様々な製品に関わる。最近ではIoT技術の普及により需要増加。",
+        "salary": "500万円",
+        "suitable": "課題を解決するためのひらめきやシンプルで分かりやすいプログラムをかける人。新しいモノを生み出す仕事のため、ひらめきやセンスが求められる。",
+        "future": "様々な分野で活躍できるため需要が高まっている。技術が身につくと継続して様々な仕事を任される傾向があり将来性がある。",
+        "futureRating": "高"
+      },
+      {
+        "title": "テストエンジニア",
+        "work": "完成物の最終確認をする",
+        "detail": "制作の終わった完成物に問題やバグがないか最終確認をすることが主な仕事。近年、高レベルのテストをテスト専門のエンジニアが担当する傾向がある。",
+        "salary": "400〜500万円",
+        "suitable": "常に業務を優先できる人。納期が厳しいケースが多く、突発的な事態が発生した時に即座に対応できる人。",
+        "future": "テストを自動化・効率化するツールが普及しており、今後はテスト工程だけを担当するテストエンジニアの需要は減少傾向。",
+        "futureRating": "低"
+      },
+      {
+        "title": "サービスエンジニア",
+        "work": "機械の保守や運用をおこなう",
+        "detail": "顧客先に向かい、導入時の機材の設置や配線を行うことを担当。アフターフォローや部品の交換、修理、障害発生時の原因究明や復旧作業なども行う。",
+        "salary": "500〜580万円",
+        "suitable": "機器を扱うのが好きで製品知識を積極的に学べる人。製品や案件により異なる知識やスキルが求められ、より深い知識を習得できる人。",
+        "future": "情報技術・通信技術の進化に伴い高度なシステムや機器の導入が増えており、その運用・保守にはサービスエンジニアが必要。今後も需要は高く将来性が高い。",
+        "futureRating": "高"
+      }
+    ]
+  },
+  {
+    "category": "インフラエンジニア",
+    "categoryDesc": "サーバーやネットワークといったITの基礎・基盤となるものを扱うエンジニア。技術だけでなく体力も必要。",
+    "color": "#FFE66D",
+    "jobs": [
+      {
+        "title": "サーバーエンジニア",
+        "work": "サーバーの構築や保守、運用を担当",
+        "detail": "企業や組織のITシステムを支えるサーバーの設計・構築・運用・保守を担当。ハードウェア選定・OS導入・ネットワーク構築・システム監視・障害対応等が主な業務。",
+        "salary": "未経験〜2年：300〜400万円 / 構築・設計経験数年：400〜500万円",
+        "suitable": "コンピューターや情報機器が好きで完璧主義の人。問題の原因がどこにあるか分析する「思考の柔軟性」も必要。",
+        "future": "ITインフラの根幹を担うサーバーエンジニアは一定の需要がある。AWS・Azureなどのクラウド普及で需要が減ると思われがちだが、クラウド技術を活用した新分野でも需要は高い。",
+        "futureRating": "高"
+      },
+      {
+        "title": "セキュリティエンジニア",
+        "work": "セキュリティ面を担当する",
+        "detail": "情報セキュリティに関する問題を特定し、対策を立案・実行することを担当。不正アクセス・ウイルス感染・情報漏えいなどのリスクを防ぐためのセキュリティ評価・監視・改善等が主な仕事。",
+        "salary": "600万円",
+        "suitable": "正確で几帳面、仕事を最後までやり遂げる人。未経験から目指す場合は、資格取得や関連業務で経験を積むことがおすすめ。",
+        "future": "多くの企業がネットワークを構築しデジタル化を進めている現代では、セキュリティエンジニアの需要がなくなるとは考えにくく、デジタル化社会に必要不可欠な存在。将来性は高い。",
+        "futureRating": "高"
+      },
+      {
+        "title": "データベースエンジニア",
+        "work": "データベースに保存したデータの運用や保守を担当",
+        "detail": "企業や組織が利用するデータベースの設計・構築・運用・保守を担当。データベーススキーマ設計・クエリ最適化・バックアップ・パフォーマンスチューニングなどを行う。",
+        "salary": "600万円",
+        "suitable": "コミュニケーション能力が高い人。プロジェクト内でデータベースエンジニアは1人なことが多く、他メンバーへ運用に関する意見を伝えられるスキルが必要。",
+        "future": "ディープラーニング・機械学習等AI関連技術の発展に伴い需要は高まっている。大規模データベースの設計・開発ができるエンジニアの需要・将来性は高い。",
+        "futureRating": "高"
+      },
+      {
+        "title": "クラウドエンジニア",
+        "work": "クラウドサービスの構築や保守を担当",
+        "detail": "クラウドサービスのインフラ設計を担当。設計から構築・保守・運用等クラウドの一連業務を担う。現場が滞りなく業務を続けるには必要不可欠な仕事。",
+        "salary": "600万円",
+        "suitable": "最新の情報を追うことが好きな人／細かいミスに気づける人／地道な作業が苦にならない人。資料作成などの地道な作業も多い。",
+        "future": "オンプレミスからクラウドへの移行が進み、自社サーバーの運用もクラウドが主流となっている。今後もクラウドの活用は進むことが予想され将来性は高い。",
+        "futureRating": "高"
+      },
+      {
+        "title": "ネットワークエンジニア",
+        "work": "ネットワークの構築や保守、運用を担当",
+        "detail": "クライアントの要望に合わせて必要なネットワーク環境を用意することを担当。企業内で使用するコンピューターや電子機器をつないで最適なネットワーク環境を構築・運用する。プログラムを書くことはほとんどない。",
+        "salary": "448万円",
+        "suitable": "学習能力が高く継続力がある人／人と接するのが苦でない人／高いコミュニケーション能力がある人。PC業務だけでなくチームメンバーやクライアントと協力して作業を進める必要がある。",
+        "future": "クラウドサービスを活用したネットワーク構築の技術があるエンジニアの需要が高い。クラウド化を踏まえると、ネットワーク以外の最新知識も取り入れていく必要がある。",
+        "futureRating": "中"
+      }
+    ]
+  },
+  {
+    "category": "上流工程に携わるエンジニア",
+    "categoryDesc": "形にしたいプロジェクトについてまとめる重要なポジション。クライアントから情報や望みを聞き出すコミュニケーション能力も必要。",
+    "color": "#43E97B",
+    "jobs": [
+      {
+        "title": "ITコンサルタント",
+        "work": "ITスキルやサービスを駆使して企業戦略を提案する",
+        "detail": "企業や組織の情報システムの最適化・改善策の提案・システムの導入支援などを担当。技術的な専門知識とビジネス知識を活かし、顧客のビジネス課題の解決に貢献することが主な仕事。",
+        "salary": "500〜1,000万円",
+        "suitable": "技術的知識とビジネス知識のバランスが取れている人。コンサルティングファームには優秀な人材が多く、同僚から刺激を受けてさらに成長したいと考えている人にも向いている。",
+        "future": "市場全体でITコンサルタントの業務を拡大している企業が増えており、需要が高まっている。",
+        "futureRating": "高"
+      },
+      {
+        "title": "プロジェクトマネージャー",
+        "work": "プロジェクト全体の管理をする",
+        "detail": "プロジェクト内の担当スタッフ・納品までのスケジュール等の進捗管理を担当。クライアントとの窓口としてプロジェクトの状況報告や改善策の提案が主な仕事。",
+        "salary": "600〜1,000万円",
+        "suitable": "コミュニケーション能力が高く問題解決能力が高い人。マルチタスクが得意でリーダーシップがある人も活躍できる。",
+        "future": "情報技術・通信技術の進化に伴い高度なシステムや機器の導入が進んでおり、今後も需要は高く将来性も高い。",
+        "futureRating": "高"
+      }
+    ]
+  },
+  {
+    "category": "そのほかのエンジニア",
+    "categoryDesc": "別の分野で活躍することもできる多様な職種。",
+    "color": "#F8A5C2",
+    "jobs": [
+      {
+        "title": "社内SE",
+        "work": "社内のパソコンや情報システムの管理をおこなう",
+        "detail": "社内のパソコンの問題や情報システムの管理を担当。システムやネットワークのトラブルシューティング・ITインフラの保守管理改善・新たなシステムの導入開発等が主な仕事。",
+        "salary": "400〜800万円",
+        "suitable": "コンピューターシステム全般に関する幅広い知識を持ち問題解決能力が高い人／的確なコミュニケーションができる人／新しい技術やシステムに好奇心があり自己研鑽を怠らない人",
+        "future": "情報システムが企業に不可欠になるため需要が高い。新しい技術や手法に対する知識・経験を持つ社内SEはますます重要視される傾向がある。",
+        "futureRating": "高"
+      },
+      {
+        "title": "データサイエンティスト",
+        "work": "統計からデータを解析し、経営に役立たせる",
+        "detail": "あらゆる統計からデータを解析し経営に役立たせる業務を担当。データの収集・整理・分析・可視化、予測モデルの開発や最適化、ビジネス上の問題解決に向けた戦略立案などが主な仕事。",
+        "salary": "500万円〜（中級600万・上級1,000万以上になることも）",
+        "suitable": "数学・統計学などの数値解析能力が高く論理的思考力がある人／プログラミング言語やデータベースの知識を持ちデータの収集や整理が得意な人／問題解決能力が高い人",
+        "future": "データの分析や活用によるビジネス価値の創出が求められるため今後も需要が高まっていく。マーケティング戦略の立案・商品開発・業務効率改善など様々な分野で活躍が期待。",
+        "futureRating": "高"
+      },
+      {
+        "title": "セールスエンジニア",
+        "work": "ITの技術や知識を活用した営業",
+        "detail": "技術的な知識や専門知識を持ちながら営業担当者と協力して顧客への製品やサービスの提供を担当。顧客のニーズ把握・提案資料作成・デモンストレーション実施・技術的サポートの提供などが主な仕事。",
+        "salary": "500万円以上（業界や経験、担当製品・サービスによって異なる）",
+        "suitable": "技術的知識に加えコミュニケーション能力が高く顧客への説明や提案が得意な人／常に新しい技術や製品に興味を持ち学習意欲が高い人",
+        "future": "技術的なスキルや専門性を求められる職種であり需要が高い。情報技術・通信技術の進化に伴い多くの企業が高度なシステムや機器を導入しており、今後も需要は高まる。",
+        "futureRating": "高"
+      },
+      {
+        "title": "フルスタックエンジニア",
+        "work": "複数の開発工程を一人で担当できるマルチなエンジニア",
+        "detail": "設計・開発・運用・保守・アップデートなど複数のスキルを持ったエンジニア。バックエンドとフロントエンドの開発に関わる場合や、アプリケーションの全体的な設計から開発・テストまで担当する場合もある。",
+        "salary": "500〜1,000万円以上（担当できる業務の幅で年収が上がりやすい）",
+        "suitable": "様々な技術に興味を持ち新しいことを学ぶ意欲が高い人／コミュニケーション能力の高い人（バックエンドとフロントエンドのチームと協力することが多い）",
+        "future": "幅広いプロジェクトに対応できるため需要が高まっている。特に中小企業やスタートアップ企業で、限られたリソースで多様な開発作業を行う必要がある場合に重宝される。",
+        "futureRating": "高"
+      },
+      {
+        "title": "フィールドエンジニア",
+        "work": "電子機器に問題が起きた際、現地へ行き問題を修正する",
+        "detail": "製品やシステムのインストール・設定・トラブルシューティング・修理などの技術的なサポートを担当。顧客が問題に直面した際に解決策を提案し、実施した業務やトラブルシューティングの結果を報告書でまとめ提供する。",
+        "salary": "400〜800万円（技術の専門性や求めるスキルでも変わる）",
+        "suitable": "技術的な興味や好奇心を持ち新しいことを学ぶのが好きな人／コミュニケーション能力の高い人（顧客に問題の説明や解決策をわかりやすく伝える必要がある）",
+        "future": "AIやIoTなどの分野で高いスキルを持つフィールドエンジニアの需要が増えている。新製品やシステムの導入・トラブルシューティング・メンテナンスで重要な役割を果たすため将来性は高い。",
+        "futureRating": "高"
+      }
+    ]
+  }
+];
+
+const FUTURE_RATING_COLOR = {'高':'#43E97B','中':'#FFE66D','低':'#FF6B6B'};
+const FUTURE_RATING_BG = {'高':'rgba(67,233,123,.1)','中':'rgba(255,230,109,.1)','低':'rgba(255,107,107,.1)'};
+
+let itJobsFilter = 'all';
+let itJobsExpanded = {};
+
+function renderITJobsTab(){
+  const tab = document.getElementById('it-jobs-tab');
+  const categories = [...new Set(IT_JOBS.map(g=>g.category))];
+
+  // カテゴリフィルタータブ
+  const filterHtml = `
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px">
+      <button onclick="setITJobsFilter('all',this)"
+        style="padding:6px 14px;border-radius:6px;border:1px solid ${itJobsFilter==='all'?'var(--cyan)':'var(--border)'};background:${itJobsFilter==='all'?'rgba(0,245,212,.1)':'transparent'};color:${itJobsFilter==='all'?'var(--cyan)':'var(--t2)'};cursor:pointer;font-size:.78rem;transition:all .2s">
+        すべて（${IT_JOBS.reduce((s,g)=>s+g.jobs.length,0)}職種）
+      </button>
+      ${IT_JOBS.map(g=>`
+        <button onclick="setITJobsFilter('${g.category}',this)"
+          style="padding:6px 14px;border-radius:6px;border:1px solid ${itJobsFilter===g.category?g.color:'var(--border)'};background:${itJobsFilter===g.category?g.color+'18':'transparent'};color:${itJobsFilter===g.category?g.color:'var(--t2)'};cursor:pointer;font-size:.78rem;transition:all .2s">
+          ${g.category}（${g.jobs.length}）
+        </button>`).join('')}
+    </div>`;
+
+  const filtered = itJobsFilter==='all' ? IT_JOBS : IT_JOBS.filter(g=>g.category===itJobsFilter);
+
+  const contentHtml = filtered.map(group=>`
+    <div style="margin-bottom:24px">
+      <!-- カテゴリヘッダー -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:12px 16px;background:${group.color}0A;border:1px solid ${group.color}33;border-radius:10px">
+        <div style="width:4px;height:24px;background:${group.color};border-radius:2px;flex-shrink:0"></div>
+        <div>
+          <div style="color:${group.color};font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem">${group.category}</div>
+          <div style="color:var(--t2);font-size:.75rem;margin-top:2px">${group.categoryDesc}</div>
+        </div>
+        <div style="margin-left:auto;background:${group.color}18;color:${group.color};font-family:'Space Mono',monospace;font-size:.65rem;padding:3px 10px;border-radius:4px">${group.jobs.length}職種</div>
+      </div>
+
+      <!-- 職種カード一覧 -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px">
+        ${group.jobs.map((job,ji)=>{
+          const key = group.category+'_'+ji;
+          const expanded = itJobsExpanded[key];
+          const rc = FUTURE_RATING_COLOR[job.futureRating]||'var(--t2)';
+          const rb = FUTURE_RATING_BG[job.futureRating]||'transparent';
+          return `
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .2s" onmouseover="this.style.borderColor='${group.color}44'" onmouseout="this.style.borderColor='var(--border)'">
+            <!-- カードヘッダー（クリックで展開） -->
+            <div style="padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:10px" onclick="toggleITJob('${key}')">
+              <div style="flex:1">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                  <span style="color:${group.color};font-weight:700;font-size:.9rem">${job.title}</span>
+                  <span style="background:${rb};color:${rc};border:1px solid ${rc}44;font-family:'Space Mono',monospace;font-size:.6rem;padding:1px 7px;border-radius:3px;white-space:nowrap">将来性：${job.futureRating}</span>
+                </div>
+                <div style="color:var(--t2);font-size:.75rem">${job.work}</div>
+                <div style="margin-top:6px;display:flex;align-items:center;gap:6px">
+                  <span style="color:var(--t3);font-size:.68rem">💴</span>
+                  <span style="color:var(--yellow);font-family:'Space Mono',monospace;font-size:.7rem">${job.salary}</span>
+                </div>
+              </div>
+              <span style="color:${group.color};font-size:.85rem;opacity:.7;transition:transform .2s;transform:rotate(${expanded?'180':'0'}deg);flex-shrink:0;margin-top:2px">▾</span>
+            </div>
+
+            <!-- 展開コンテンツ -->
+            <div id="itjob-${key}" style="display:${expanded?'block':'none'};border-top:1px solid var(--border)">
+              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
+                <div>
+                  <div style="color:var(--t3);font-family:'Space Mono',monospace;font-size:.6rem;margin-bottom:5px">📋 仕事内容</div>
+                  <div style="color:var(--t1);font-size:.78rem;line-height:1.7">${job.detail}</div>
+                </div>
+                <div>
+                  <div style="color:var(--t3);font-family:'Space Mono',monospace;font-size:.6rem;margin-bottom:5px">👤 向いている人</div>
+                  <div style="color:var(--t1);font-size:.78rem;line-height:1.7">${job.suitable}</div>
+                </div>
+                <div style="background:${rb};border:1px solid ${rc}33;border-radius:7px;padding:10px 12px">
+                  <div style="color:${rc};font-family:'Space Mono',monospace;font-size:.6rem;margin-bottom:5px">🚀 将来性（${job.futureRating}）</div>
+                  <div style="color:var(--t1);font-size:.78rem;line-height:1.7">${job.future}</div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+
+  tab.innerHTML = filterHtml + contentHtml;
+}
+
+function setITJobsFilter(filter, el){
+  itJobsFilter = filter;
+  renderITJobsTab();
+}
+
+function toggleITJob(key){
+  itJobsExpanded[key] = !itJobsExpanded[key];
+  renderITJobsTab();
+}
 // ========== INPUT PAGE ==========
 
 // Load data from localStorage on startup
@@ -1897,7 +3522,13 @@ function renderMediaInput(){
         </div>
         <button class="del-btn" onclick="deleteMedia(${i})">×</button>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:10px">
+        <div class="input-group"><div class="input-label">カテゴリ</div>
+          <select class="input-field" onchange="MEDIA[${i}].category=this.value;renderMediaInput()">
+            <option value="媒体" ${m.category==='媒体'?'selected':''}>媒体</option>
+            <option value="エージェント" ${m.category==='エージェント'?'selected':''}>エージェント</option>
+          </select>
+        </div>
         <div class="input-group"><div class="input-label">予算(円)</div><input class="input-field" type="number" value="${m.budget}" oninput="updateMedia(${i},'budget',this.value)"></div>
         <div class="input-group"><div class="input-label">使用額(円)</div><input class="input-field" type="number" value="${m.spent}" oninput="updateMedia(${i},'spent',this.value)"></div>
         <div class="input-group"><div class="input-label">応募数</div><input class="input-field" type="number" value="${m.applications}" oninput="updateMedia(${i},'applications',this.value)"></div>
@@ -1996,6 +3627,19 @@ function saveBudgetInput(){
 
 // ---- INTERVIEWER INPUT ----
 let ivPeriod = '22';
+let ivInputMode = 'period';
+let ivMonthlyInputIdx = 0;
+
+function switchIVInputMode(mode, el){
+  ivInputMode = mode;
+  document.getElementById('iv-input-mode-period').style.background = mode==='period'?'rgba(0,245,212,.12)':'transparent';
+  document.getElementById('iv-input-mode-period').style.color = mode==='period'?'var(--cyan)':'var(--t2)';
+  document.getElementById('iv-input-mode-period').style.fontWeight = mode==='period'?'700':'400';
+  document.getElementById('iv-input-mode-monthly').style.background = mode==='monthly'?'rgba(123,97,255,.12)':'transparent';
+  document.getElementById('iv-input-mode-monthly').style.color = mode==='monthly'?'var(--purple)':'var(--t2)';
+  document.getElementById('iv-input-mode-monthly').style.fontWeight = mode==='monthly'?'700':'400';
+  renderIVInput();
+}
 
 function switchIVPeriod(period){
   ivPeriod = period;
@@ -2015,6 +3659,7 @@ function switchIVPeriod(period){
 }
 
 function renderIVInput(){
+  if(ivInputMode === 'monthly'){ renderIVMonthlyInput(); return; }
   const keys = ['applications','documentPass','firstInterview','firstPass','secondInterview','secondPass','offers','acceptances'];
   const labels = ['応募数','書類通過数','一次面接実施数','一次通過数','二次面接実施数','二次通過数','内定数','承諾数'];
   const colors = ['#00F5D4','#7B61FF','#FF6B6B','#FFE66D','#F8A5C2','#43E97B','#4ECDC4','#FF9F43'];
@@ -2101,6 +3746,119 @@ function deleteIV(i){
   selectedIVs = selectedIVs.filter(id=>id<INTERVIEWERS.length);
   if(selectedIVs.length===0) selectedIVs=[0];
   renderIVInput();
+}
+
+
+// ===== 面接官 月別入力 =====
+function renderIVMonthlyInput(){
+  const keys = ['applications','documentPass','firstInterview','firstPass','secondInterview','secondPass','offers','acceptances'];
+  const labels = ['応募数','書類通過数','一次面接実施数','一次通過数','二次面接実施数','二次通過数','内定数','承諾数'];
+  const colors = ['#00F5D4','#7B61FF','#FF6B6B','#FFE66D','#F8A5C2','#43E97B','#4ECDC4','#FF9F43'];
+  const months = ['9月','10月','11月','12月','1月','2月','3月','4月','5月','6月','7月','8月'];
+  const rateColor = r => r>=100?'#43E97B':r>=80?'#FFE66D':'#FF6B6B';
+
+  // 面接官セレクター（単一選択）
+  const ivSelectorHtml = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      ${INTERVIEWERS.map((iv,i)=>`
+        <div onclick="selectIVInput(${i})" style="display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:7px;border:1px solid ${ivMonthlyInputIdx===i?iv.color:'var(--border)'};background:${ivMonthlyInputIdx===i?iv.color+'12':'transparent'};cursor:pointer;transition:all .2s">
+          <div style="width:22px;height:22px;border-radius:50%;background:${ivMonthlyInputIdx===i?iv.color:'#1A2A45'};color:${ivMonthlyInputIdx===i?'#070B14':'#7A8FA6'};display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700">${iv.av}</div>
+          <span style="color:${ivMonthlyInputIdx===i?iv.color:'var(--t2)'};font-size:.8rem;font-weight:${ivMonthlyInputIdx===i?'600':'400'}">${iv.name}</span>
+        </div>`).join('')}
+    </div>`;
+
+  const iv = INTERVIEWERS[ivMonthlyInputIdx];
+  if(!iv){ document.getElementById('iv-input-cards').innerHTML = ivSelectorHtml; return; }
+  if(!iv.monthly || iv.monthly.length===0){
+    iv.monthly = months.map(m=>({month:m,...Object.fromEntries(keys.map(k=>[k,0])),...Object.fromEntries(keys.map(k=>['t_'+k,0]))}));
+  }
+
+  // 月別テーブル
+  const tableHtml = `
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.75rem">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);color:var(--t3);font-family:'Space Mono',monospace;font-size:.6rem;min-width:60px">月</th>
+            <th style="padding:8px 6px;border-bottom:1px solid var(--border);color:var(--t3);font-family:'Space Mono',monospace;font-size:.6rem">種別</th>
+            ${labels.map((l,ki)=>`<th style="text-align:right;padding:8px 6px;border-bottom:1px solid var(--border);color:${colors[ki]};font-family:'Space Mono',monospace;font-size:.6rem">${l}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${months.map((m, mi)=>{
+            const row = iv.monthly?.find(x=>x.month===m) || {};
+            return `
+              <tr style="border-top:2px solid var(--border)">
+                <td rowspan="3" style="padding:5px 10px;color:var(--t2);font-family:'Space Mono',monospace;font-size:.72rem;vertical-align:middle;border-right:1px solid var(--border)">${m}</td>
+                <td style="padding:3px 7px">
+                  <span style="background:rgba(123,97,255,.1);color:var(--purple);font-family:'Space Mono',monospace;font-size:.58rem;padding:2px 6px;border-radius:3px;white-space:nowrap">目標</span>
+                </td>
+                ${keys.map(k=>`<td style="padding:3px 4px">
+                  <input class="input-field" type="number" min="0" value="${row['t_'+k]||0}"
+                    oninput="updateIVMonthly(${ivMonthlyInputIdx},'${m}','t_${k}',this.value)"
+                    style="text-align:right;width:68px;border-color:rgba(123,97,255,.3);color:var(--purple);padding:4px 5px">
+                </td>`).join('')}
+              </tr>
+              <tr>
+                <td style="padding:3px 7px">
+                  <span style="background:rgba(0,245,212,.1);color:var(--cyan);font-family:'Space Mono',monospace;font-size:.58rem;padding:2px 6px;border-radius:3px;white-space:nowrap">実績</span>
+                </td>
+                ${keys.map(k=>`<td style="padding:3px 4px">
+                  <input class="input-field" type="number" min="0" value="${row[k]||0}"
+                    oninput="updateIVMonthly(${ivMonthlyInputIdx},'${m}','${k}',this.value)"
+                    style="text-align:right;width:68px;border-color:rgba(0,245,212,.2);padding:4px 5px">
+                </td>`).join('')}
+              </tr>
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:3px 7px">
+                  <span style="background:rgba(67,233,123,.07);color:#43E97B;font-family:'Space Mono',monospace;font-size:.58rem;padding:2px 6px;border-radius:3px;white-space:nowrap">達成率</span>
+                </td>
+                ${keys.map(k=>{
+                  const actual=row[k]||0, target=row['t_'+k]||0;
+                  const r = target>0?Math.round(actual/target*100):null;
+                  const rc = r!=null?rateColor(r):'var(--t3)';
+                  return `<td style="text-align:right;padding:3px 8px">
+                    <span style="font-family:'Space Mono',monospace;font-size:.68rem;font-weight:700;color:${rc}">${r!=null?r+'%':'—'}</span>
+                  </td>`;
+                }).join('')}
+              </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  document.getElementById('iv-input-cards').innerHTML = ivSelectorHtml + `
+    <div style="background:var(--bg2);border-radius:9px;padding:16px;border-left:3px solid ${iv.color}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:30px;height:30px;border-radius:50%;background:${iv.color};color:#070B14;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700">${iv.av}</div>
+        <div>
+          <div style="color:${iv.color};font-weight:700;font-size:.88rem">${iv.name}</div>
+          <div style="color:var(--t2);font-size:.72rem">${iv.dept} — 月別 目標・実績入力</div>
+        </div>
+      </div>
+      ${tableHtml}
+    </div>`;
+}
+
+function selectIVInput(idx){
+  ivMonthlyInputIdx = idx;
+  renderIVMonthlyInput();
+}
+
+function updateIVMonthly(ivIdx, month, key, val){
+  const iv = INTERVIEWERS[ivIdx];
+  if(!iv.monthly) iv.monthly = [];
+  let row = iv.monthly.find(x=>x.month===month);
+  if(!row){
+    row = {month};
+    iv.monthly.push(row);
+  }
+  row[key] = Number(val)||0;
+  // 年間合計も更新
+  const baseKey = key.startsWith('t_') ? null : key;
+  if(baseKey){
+    iv[baseKey] = iv.monthly.reduce((s,r)=>s+(r[baseKey]||0),0);
+  }
 }
 
 function saveInterviewers(){
