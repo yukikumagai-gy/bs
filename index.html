@@ -194,6 +194,9 @@ tr:hover td{background:var(--card2)}
   <!-- KPI Cards -->
   <div class="kpi-grid kpi-grid-4" id="dash-kpis"></div>
 
+  <!-- Achievement Summary Bar -->
+  <div class="card" id="achieve-summary" style="margin-bottom:18px;padding:16px 20px"></div>
+
   <!-- Sub tabs -->
   <div class="tabs">
     <button class="tab active" onclick="setSubView('overview',this)">トレンド概要</button>
@@ -339,7 +342,23 @@ tr:hover td{background:var(--card2)}
   <div id="monthly-input">
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem">月別採用実績データ <span style="color:var(--t3)">（各月の数値を入力してください）</span></div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem">月別採用データ</div>
+          <!-- 期切り替え -->
+          <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:3px">
+            <button id="period-btn-22" onclick="switchTargetPeriod('22')"
+              style="padding:5px 14px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Mono',monospace;font-size:.7rem;font-weight:700;background:rgba(0,245,212,.12);color:var(--cyan);transition:all .2s">
+              22期（今期）
+            </button>
+            <button id="period-btn-23" onclick="switchTargetPeriod('23')"
+              style="padding:5px 14px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Mono',monospace;font-size:.7rem;font-weight:400;background:transparent;color:var(--t2);transition:all .2s">
+              23期（来期）
+            </button>
+          </div>
+          <div id="period-badge" style="background:rgba(0,245,212,.08);border:1px solid rgba(0,245,212,.3);color:var(--cyan);font-family:'Space Mono',monospace;font-size:.65rem;padding:3px 10px;border-radius:4px">
+            22期 目標＆実績
+          </div>
+        </div>
         <button class="btn btn-outline-cyan" onclick="saveMonthly()" style="font-size:.75rem;padding:7px 14px">✓ 保存してダッシュボードに反映</button>
       </div>
       <div class="tbl-wrap">
@@ -396,7 +415,23 @@ tr:hover td{background:var(--card2)}
   <div id="interviewer-input" style="display:none">
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem">面接官データ <span style="color:var(--t3)">（面接官ごとの担当実績を入力）</span></div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem">面接官データ</div>
+          <!-- 期切り替え -->
+          <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:3px">
+            <button id="iv-period-btn-22" onclick="switchIVPeriod('22')"
+              style="padding:5px 14px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Mono',monospace;font-size:.7rem;font-weight:700;background:rgba(0,245,212,.12);color:var(--cyan);transition:all .2s">
+              22期（今期）
+            </button>
+            <button id="iv-period-btn-23" onclick="switchIVPeriod('23')"
+              style="padding:5px 14px;border-radius:4px;border:none;cursor:pointer;font-family:'Space Mono',monospace;font-size:.7rem;font-weight:400;background:transparent;color:var(--t2);transition:all .2s">
+              23期（来期）
+            </button>
+          </div>
+          <div id="iv-period-badge" style="background:rgba(0,245,212,.08);border:1px solid rgba(0,245,212,.3);color:var(--cyan);font-family:'Space Mono',monospace;font-size:.65rem;padding:3px 10px;border-radius:4px">
+            22期 目標＆実績
+          </div>
+        </div>
         <button class="btn btn-outline-cyan" onclick="saveInterviewers()" style="font-size:.75rem;padding:7px 14px">✓ 保存してダッシュボードに反映</button>
       </div>
       <div id="iv-input-cards"></div>
@@ -449,11 +484,6 @@ const METRICS = [
 ];
 
 const MONTHLY = [
-  {month:'4月', applications:145,documentPass:87,firstInterview:72,firstPass:54,secondInterview:48,secondPass:32,offers:28,acceptances:24},
-  {month:'5月', applications:198,documentPass:118,firstInterview:95,firstPass:71,secondInterview:63,secondPass:44,offers:38,acceptances:33},
-  {month:'6月', applications:223,documentPass:134,firstInterview:108,firstPass:82,secondInterview:71,secondPass:52,offers:46,acceptances:40},
-  {month:'7月', applications:167,documentPass:101,firstInterview:84,firstPass:63,secondInterview:55,secondPass:38,offers:34,acceptances:29},
-  {month:'8月', applications:134,documentPass:80,firstInterview:66,firstPass:49,secondInterview:43,secondPass:30,offers:26,acceptances:22},
   {month:'9月', applications:189,documentPass:113,firstInterview:92,firstPass:69,secondInterview:61,secondPass:43,offers:37,acceptances:32},
   {month:'10月',applications:212,documentPass:127,firstInterview:103,firstPass:77,secondInterview:68,secondPass:48,offers:42,acceptances:37},
   {month:'11月',applications:178,documentPass:107,firstInterview:88,firstPass:66,secondInterview:58,secondPass:41,offers:36,acceptances:31},
@@ -461,22 +491,22 @@ const MONTHLY = [
   {month:'1月', applications:201,documentPass:121,firstInterview:98,firstPass:73,secondInterview:65,secondPass:46,offers:40,acceptances:35},
   {month:'2月', applications:234,documentPass:140,firstInterview:114,firstPass:85,secondInterview:75,secondPass:53,offers:47,acceptances:41},
   {month:'3月', applications:267,documentPass:160,firstInterview:130,firstPass:97,secondInterview:86,secondPass:61,offers:54,acceptances:47},
+  {month:'4月', applications:145,documentPass:87,firstInterview:72,firstPass:54,secondInterview:48,secondPass:32,offers:28,acceptances:24},
+  {month:'5月', applications:198,documentPass:118,firstInterview:95,firstPass:71,secondInterview:63,secondPass:44,offers:38,acceptances:33},
+  {month:'6月', applications:223,documentPass:134,firstInterview:108,firstPass:82,secondInterview:71,secondPass:52,offers:46,acceptances:40},
+  {month:'7月', applications:167,documentPass:101,firstInterview:84,firstPass:63,secondInterview:55,secondPass:38,offers:34,acceptances:29},
+  {month:'8月', applications:134,documentPass:80,firstInterview:66,firstPass:49,secondInterview:43,secondPass:30,offers:26,acceptances:22},
 ];
 
 const QUARTERLY = [
-  {month:'1Q(10-12月)',applications:533,documentPass:320,firstInterview:261,firstPass:195,secondInterview:172,secondPass:121,offers:106,acceptances:92},
-  {month:'2Q(1-3月)', applications:702,documentPass:421,firstInterview:342,firstPass:255,secondInterview:226,secondPass:160,offers:141,acceptances:123},
-  {month:'3Q(4-6月)', applications:566,documentPass:339,firstInterview:275,firstPass:207,secondInterview:182,secondPass:128,offers:112,acceptances:97},
-  {month:'4Q(7-9月)', applications:490,documentPass:294,firstInterview:242,firstPass:181,secondInterview:159,secondPass:111,offers:97,acceptances:83},
+  {month:'1Q(9-11月)', applications:579,documentPass:347,firstInterview:283,firstPass:212,secondInterview:187,secondPass:132,offers:115,acceptances:100},
+  {month:'2Q(12-2月)',applications:644,documentPass:386,firstInterview:282,firstPass:210,secondInterview:167,secondPass:130,offers:115,acceptances:100},
+  {month:'3Q(3-5月)', applications:610,documentPass:365,firstInterview:305,firstPass:225,secondInterview:199,secondPass:137,offers:120,acceptances:105},
+  {month:'4Q(6-8月)', applications:524,documentPass:321,firstInterview:266,firstPass:196,secondInterview:169,secondPass:114,offers:100,acceptances:85},
 ];
 
 // 目標値データ（月別）
 let MONTHLY_TARGET = [
-  {month:'4月', applications:150,documentPass:90,firstInterview:75,firstPass:56,secondInterview:50,secondPass:35,offers:30,acceptances:26},
-  {month:'5月', applications:200,documentPass:120,firstInterview:98,firstPass:73,secondInterview:65,secondPass:46,offers:40,acceptances:35},
-  {month:'6月', applications:220,documentPass:132,firstInterview:107,firstPass:80,secondInterview:70,secondPass:50,offers:44,acceptances:38},
-  {month:'7月', applications:170,documentPass:102,firstInterview:85,firstPass:64,secondInterview:56,secondPass:39,offers:34,acceptances:30},
-  {month:'8月', applications:140,documentPass:84,firstInterview:68,firstPass:51,secondInterview:45,secondPass:32,offers:28,acceptances:24},
   {month:'9月', applications:190,documentPass:114,firstInterview:93,firstPass:70,secondInterview:62,secondPass:44,offers:38,acceptances:33},
   {month:'10月',applications:210,documentPass:126,firstInterview:102,firstPass:76,secondInterview:67,secondPass:47,offers:41,acceptances:36},
   {month:'11月',applications:180,documentPass:108,firstInterview:89,firstPass:67,secondInterview:59,secondPass:42,offers:37,acceptances:32},
@@ -484,6 +514,11 @@ let MONTHLY_TARGET = [
   {month:'1月', applications:200,documentPass:120,firstInterview:97,firstPass:72,secondInterview:64,secondPass:45,offers:39,acceptances:34},
   {month:'2月', applications:235,documentPass:141,firstInterview:115,firstPass:86,secondInterview:76,secondPass:54,offers:48,acceptances:42},
   {month:'3月', applications:265,documentPass:159,firstInterview:129,firstPass:96,secondInterview:85,secondPass:60,offers:53,acceptances:46},
+  {month:'4月', applications:150,documentPass:90,firstInterview:75,firstPass:56,secondInterview:50,secondPass:35,offers:30,acceptances:26},
+  {month:'5月', applications:200,documentPass:120,firstInterview:98,firstPass:73,secondInterview:65,secondPass:46,offers:40,acceptances:35},
+  {month:'6月', applications:220,documentPass:132,firstInterview:107,firstPass:80,secondInterview:70,secondPass:50,offers:44,acceptances:38},
+  {month:'7月', applications:170,documentPass:102,firstInterview:85,firstPass:64,secondInterview:56,secondPass:39,offers:34,acceptances:30},
+  {month:'8月', applications:140,documentPass:84,firstInterview:68,firstPass:51,secondInterview:45,secondPass:32,offers:28,acceptances:24},
 ];
 
 const INTERVIEWERS = [
@@ -564,11 +599,56 @@ function renderDashboard(){
   const data = viewMode==='monthly'?MONTHLY:QUARTERLY;
   const t = totals(data);
   renderDashKPIs(t);
+  renderAchieveSummary(t);
   renderMetricChips();
   renderMainChart(data);
   renderMainTable(data);
   if(subView==='funnel') renderFunnel(t);
   if(subView==='interviewer') renderInterviewer();
+}
+
+function renderAchieveSummary(t){
+  const tgt = totals(MONTHLY_TARGET);
+  const el = document.getElementById('achieve-summary');
+  if(!el) return;
+
+  const rows = METRICS.map(m=>{
+    const actual = t[m.key]||0;
+    const target = tgt[m.key]||1;
+    const rate = Math.round(actual/target*100);
+    const barW = Math.min(rate,100);
+    const col = rate>=100?'#43E97B':rate>=80?'#FFE66D':'#FF6B6B';
+    const over = rate>100;
+    return {m, actual, target, rate, barW, col, over};
+  });
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem">全指標 達成率サマリー（22期 目標対比）</div>
+      <div style="display:flex;gap:12px">
+        <span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:#43E97B"><span style="width:8px;height:8px;border-radius:50%;background:#43E97B;display:inline-block"></span>達成（100%以上）</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:#FFE66D"><span style="width:8px;height:8px;border-radius:50%;background:#FFE66D;display:inline-block"></span>惜しい（80-99%）</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:#FF6B6B"><span style="width:8px;height:8px;border-radius:50%;background:#FF6B6B;display:inline-block"></span>未達（80%未満）</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+      ${rows.map(({m,actual,target,rate,barW,col,over})=>`
+        <div style="background:var(--bg2);border-radius:8px;padding:11px 13px;border-left:3px solid ${col}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="color:var(--t2);font-size:.72rem">${m.label}</span>
+            <span style="font-family:'Space Mono',monospace;font-size:.78rem;font-weight:700;color:${col}">${rate}%</span>
+          </div>
+          <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:6px">
+            <div style="height:100%;width:${barW}%;background:${col};border-radius:3px;transition:width .8s ease"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="color:${m.color};font-family:'Space Mono',monospace;font-size:.7rem;font-weight:700">${actual.toLocaleString()}</span>
+            <span style="color:var(--t3);font-family:'Space Mono',monospace;font-size:.65rem">/ ${target.toLocaleString()}</span>
+            <span style="font-size:.65rem;color:${col};font-family:'Space Mono',monospace">${over?'✓ 超過達成':rate>=100?'✓ 達成':rate>=80?'△ 惜しい':'✕ 未達'}</span>
+          </div>
+        </div>`).join('')}
+    </div>
+  `;
 }
 
 function setViewMode(mode,el){
@@ -602,18 +682,62 @@ function setChartMode(mode,el){
 function renderDashKPIs(t){
   const data=viewMode==='monthly'?MONTHLY:QUARTERLY;
   const tt=totals(data);
+  const tgt=totals(MONTHLY_TARGET);
+
+  function achieveRate(actual, target){
+    if(!target) return null;
+    return Math.round(actual/target*100);
+  }
+  function rateColor(r){ return r>=100?'#43E97B':r>=80?'#FFE66D':'#FF6B6B'; }
+  function rateLabel(r){ return r>=100?'✓ 達成':'未達'; }
+
+  const appRate  = achieveRate(tt.applications, tgt.applications);
+  const accRate  = achieveRate(tt.acceptances,  tgt.acceptances);
+  const docRate  = achieveRate(+pct(tt.documentPass,tt.applications), +pct(tgt.documentPass,tgt.applications));
+  const offerRate= achieveRate(+pct(tt.acceptances,tt.applications),  +pct(tgt.acceptances,tgt.applications));
+
   const items=[
-    {label:'総応募数',value:tt.applications.toLocaleString(),unit:'件',color:'#00F5D4'},
-    {label:'内定承諾数',value:tt.acceptances.toLocaleString(),unit:'人',color:'#43E97B'},
-    {label:'書類通過率',value:pct(tt.documentPass,tt.applications),unit:'%',color:'#7B61FF'},
-    {label:'最終内定率',value:pct(tt.acceptances,tt.applications),unit:'%',color:'#FFE66D'},
+    {label:'総応募数',value:tt.applications.toLocaleString(),unit:'件',color:'#00F5D4',
+     tval:tgt.applications.toLocaleString(),tunit:'件',rate:appRate},
+    {label:'内定承諾数',value:tt.acceptances.toLocaleString(),unit:'人',color:'#43E97B',
+     tval:tgt.acceptances.toLocaleString(),tunit:'人',rate:accRate},
+    {label:'書類通過率',value:pct(tt.documentPass,tt.applications),unit:'%',color:'#7B61FF',
+     tval:pct(tgt.documentPass,tgt.applications),tunit:'%',rate:docRate},
+    {label:'最終内定率',value:pct(tt.acceptances,tt.applications),unit:'%',color:'#FFE66D',
+     tval:pct(tgt.acceptances,tgt.applications),tunit:'%',rate:offerRate},
   ];
-  document.getElementById('dash-kpis').innerHTML = items.map(k=>`
+
+  document.getElementById('dash-kpis').innerHTML = items.map(k=>{
+    const r = k.rate;
+    const rc = r!=null ? rateColor(r) : 'var(--t3)';
+    const barW = r!=null ? Math.min(r,100) : 0;
+    return `
     <div class="kpi-card" style="--c:${k.color}">
       <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${k.color}"></div>
-      <div class="kpi-label">${k.label}</div>
-      <div class="kpi-value" style="color:${k.color}">${k.value}<span style="color:var(--t2);font-size:.9rem;margin-left:3px">${k.unit}</span></div>
-    </div>`).join('');
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="kpi-label">${k.label}</div>
+        ${r!=null?`<span style="font-family:'Space Mono',monospace;font-size:.65rem;font-weight:700;color:${rc};background:${rc}18;padding:2px 7px;border-radius:4px">${r}%</span>`:''}
+      </div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin-top:7px">
+        <div>
+          <span class="kpi-value" style="color:${k.color}">${k.value}</span>
+          <span style="color:var(--t2);font-size:.9rem;margin-left:2px">${k.unit}</span>
+        </div>
+        <div style="color:var(--t3);font-size:.72rem;font-family:'Space Mono',monospace">
+          / 目標 ${k.tval}${k.tunit}
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${barW}%;background:${rc};border-radius:2px;transition:width .8s ease"></div>
+        </div>
+        ${r!=null?`<div style="display:flex;justify-content:space-between;margin-top:4px">
+          <span style="color:${rc};font-size:.65rem;font-family:'Space Mono',monospace">${rateLabel(r)}</span>
+          <span style="color:var(--t3);font-size:.65rem;font-family:'Space Mono',monospace">${r>=100?'':r+'% 達成'}</span>
+        </div>`:''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderMetricChips(){
@@ -642,16 +766,41 @@ function destroyChart(inst){ if(inst) try{inst.destroy()}catch(e){} return null;
 
 function renderMainChart(data){
   mainChartInst = destroyChart(mainChartInst);
-  document.getElementById('chart-label').textContent = viewMode==='monthly'?'月別採用トレンド':'四半期別採用推移';
+  document.getElementById('chart-label').textContent = viewMode==='monthly'?'月別採用トレンド（実績 vs 目標）':'四半期別採用推移（実績 vs 目標）';
   const labels = data.map(d=>d.month);
-  const datasets = METRICS.filter(m=>selectedMetrics.includes(m.key)).map(m=>({
-    label:m.label, data:data.map(d=>d[m.key]),
-    backgroundColor: chartMode==='bar'?m.color+'BB':undefined,
-    borderColor: m.color,
-    fill:false, tension:.4, pointRadius:0,
-    borderWidth: chartMode==='bar'?0:2,
-    borderRadius: chartMode==='bar'?3:0,
-  }));
+  const TARGET = viewMode==='monthly' ? MONTHLY_TARGET : (() => {
+    const slices = [MONTHLY_TARGET.slice(0,3),MONTHLY_TARGET.slice(3,6),MONTHLY_TARGET.slice(6,9),MONTHLY_TARGET.slice(9,12)];
+    return slices.map(s=> Object.fromEntries(METRICS.map(m=>[m.key,s.reduce((a,r)=>a+(r[m.key]||0),0)])));
+  })();
+
+  const datasets = [];
+  METRICS.filter(m=>selectedMetrics.includes(m.key)).forEach(m=>{
+    // 実績
+    datasets.push({
+      label: m.label+'（実績）',
+      data: data.map(d=>d[m.key]),
+      backgroundColor: chartMode==='bar'? m.color+'99': undefined,
+      borderColor: m.color,
+      fill: false, tension:.4, pointRadius: chartMode==='line'?3:0,
+      borderWidth: chartMode==='bar'?0:2,
+      borderRadius: chartMode==='bar'?3:0,
+      order: 2,
+    });
+    // 目標（折れ線のみ破線、棒グラフは細い棒）
+    datasets.push({
+      label: m.label+'（目標）',
+      data: TARGET.map(t=>t[m.key]||0),
+      backgroundColor: chartMode==='bar'? m.color+'33': undefined,
+      borderColor: m.color+'88',
+      borderDash: [5,4],
+      fill: false, tension:.4, pointRadius: chartMode==='line'?2:0,
+      borderWidth: chartMode==='bar'?0:1.5,
+      borderRadius: chartMode==='bar'?3:0,
+      order: 1,
+      type: chartMode==='bar'? 'bar': 'line',
+    });
+  });
+
   const ctx = document.getElementById('mainChart').getContext('2d');
   mainChartInst = new Chart(ctx,{
     type: chartMode==='bar'?'bar':'line',
@@ -673,13 +822,65 @@ function chartOpts(horizontal){
 }
 
 function renderMainTable(data){
-  document.getElementById('table-label').textContent = viewMode==='monthly'?'月別詳細データ':'四半期別詳細データ';
-  const th = ['期間',...METRICS.map(m=>m.label)].map(h=>`<th style="text-align:${h==='期間'?'left':'right'}">${h}</th>`).join('');
-  const rows = data.map(row=>`
-    <tr>
-      <td class="mono" style="color:var(--t2)">${row.month}</td>
-      ${METRICS.map(m=>`<td class="mono" style="text-align:right;color:${m.color}">${row[m.key].toLocaleString()}</td>`).join('')}
-    </tr>`).join('');
+  const isMonthly = viewMode==='monthly';
+  document.getElementById('table-label').textContent = isMonthly?'月別詳細データ（目標・実績・達成率）':'四半期別詳細データ（目標・実績・達成率）';
+  const TARGET = isMonthly ? MONTHLY_TARGET : (() => {
+    // 四半期目標を計算
+    return [
+      {month:'1Q',applications:0,...Object.fromEntries(METRICS.map(m=>[m.key,0]))},
+      {month:'2Q',applications:0,...Object.fromEntries(METRICS.map(m=>[m.key,0]))},
+      {month:'3Q',applications:0,...Object.fromEntries(METRICS.map(m=>[m.key,0]))},
+      {month:'4Q',applications:0,...Object.fromEntries(METRICS.map(m=>[m.key,0]))},
+    ].map((q,i)=>{
+      const slice = [MONTHLY_TARGET.slice(0,3),MONTHLY_TARGET.slice(3,6),MONTHLY_TARGET.slice(6,9),MONTHLY_TARGET.slice(9,12)][i];
+      METRICS.forEach(m=>{ q[m.key]=slice.reduce((s,r)=>s+(r[m.key]||0),0); });
+      return q;
+    });
+  })();
+
+  const thStyle = (align) => `text-align:${align};color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem;padding:8px 8px;border-bottom:1px solid var(--border);white-space:nowrap`;
+  const th = `
+    <th style="${thStyle('left')}">期間</th>
+    <th style="${thStyle('center')}">種別</th>
+    ${METRICS.map(m=>`<th style="${thStyle('right')};color:${m.color}">${m.label}</th>`).join('')}
+  `;
+
+  const rows = data.map((row, i)=>{
+    const tRow = TARGET[i] || {};
+    function cell(actual, target, color){
+      const r = target ? Math.round(actual/target*100) : null;
+      const rc = r==null?'var(--t3)':r>=100?'#43E97B':r>=80?'#FFE66D':'#FF6B6B';
+      return { actual, target, r, rc, color };
+    }
+    const cells = METRICS.map(m=> cell(row[m.key]||0, tRow[m.key]||0, m.color));
+
+    return `
+      <!-- 実績行 -->
+      <tr style="border-top:2px solid var(--border)">
+        <td rowspan="3" style="padding:6px 10px;color:var(--t2);font-family:'Space Mono',monospace;font-size:.72rem;vertical-align:middle;border-right:1px solid var(--border)">${row.month}</td>
+        <td style="padding:4px 8px">
+          <span style="background:rgba(0,245,212,.1);color:var(--cyan);font-family:'Space Mono',monospace;font-size:.6rem;padding:2px 6px;border-radius:3px">実績</span>
+        </td>
+        ${cells.map(c=>`<td class="mono" style="text-align:right;color:${c.color};padding:5px 8px">${c.actual.toLocaleString()}</td>`).join('')}
+      </tr>
+      <!-- 目標行 -->
+      <tr>
+        <td style="padding:4px 8px">
+          <span style="background:rgba(123,97,255,.1);color:var(--purple);font-family:'Space Mono',monospace;font-size:.6rem;padding:2px 6px;border-radius:3px">目標</span>
+        </td>
+        ${cells.map(c=>`<td class="mono" style="text-align:right;color:var(--t3);padding:5px 8px">${c.target.toLocaleString()}</td>`).join('')}
+      </tr>
+      <!-- 達成率行 -->
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:4px 8px">
+          <span style="background:rgba(67,233,123,.07);color:#43E97B;font-family:'Space Mono',monospace;font-size:.6rem;padding:2px 6px;border-radius:3px">達成率</span>
+        </td>
+        ${cells.map(c=>`<td style="text-align:right;padding:5px 8px">
+          ${c.r!=null ? `<span style="font-family:'Space Mono',monospace;font-size:.7rem;font-weight:700;color:${c.rc}">${c.r}%</span>` : '<span style="color:var(--t3)">—</span>'}
+        </td>`).join('')}
+      </tr>`;
+  }).join('');
+
   document.getElementById('main-table').innerHTML = `<thead><tr>${th}</tr></thead><tbody>${rows}</tbody>`;
 }
 
@@ -1537,6 +1738,10 @@ function loadSavedData(){
     if(m){ const d=JSON.parse(m); MONTHLY.splice(0,MONTHLY.length,...d); }
     const mt = localStorage.getItem('ro_monthly_target');
     if(mt){ const d=JSON.parse(mt); MONTHLY_TARGET.splice(0,MONTHLY_TARGET.length,...d); }
+    const mt23 = localStorage.getItem('ro_monthly_target_23');
+    if(mt23){ const d=JSON.parse(mt23); MONTHLY_TARGET_23.splice(0,MONTHLY_TARGET_23.length,...d); }
+    const ivt23 = localStorage.getItem('ro_iv_target_23');
+    if(ivt23){ const d=JSON.parse(ivt23); Object.assign(IV_TARGET_23, d); }
     const q = localStorage.getItem('ro_media');
     if(q){ const d=JSON.parse(q); MEDIA.splice(0,MEDIA.length,...d); }
     const b = localStorage.getItem('ro_budget');
@@ -1565,35 +1770,60 @@ function setInputTab(tab, el){
 }
 
 // ---- MONTHLY INPUT ----
+function switchTargetPeriod(period){
+  targetPeriod = period;
+  const is22 = period === '22';
+  // Update buttons
+  document.getElementById('period-btn-22').style.background = is22 ? 'rgba(0,245,212,.12)' : 'transparent';
+  document.getElementById('period-btn-22').style.color = is22 ? 'var(--cyan)' : 'var(--t2)';
+  document.getElementById('period-btn-22').style.fontWeight = is22 ? '700' : '400';
+  document.getElementById('period-btn-23').style.background = !is22 ? 'rgba(255,230,109,.12)' : 'transparent';
+  document.getElementById('period-btn-23').style.color = !is22 ? 'var(--yellow)' : 'var(--t2)';
+  document.getElementById('period-btn-23').style.fontWeight = !is22 ? '700' : '400';
+  // Update badge
+  const badge = document.getElementById('period-badge');
+  badge.textContent = is22 ? '22期 目標＆実績' : '23期 目標（来期計画）';
+  badge.style.background = is22 ? 'rgba(0,245,212,.08)' : 'rgba(255,230,109,.08)';
+  badge.style.borderColor = is22 ? 'rgba(0,245,212,.3)' : 'rgba(255,230,109,.3)';
+  badge.style.color = is22 ? 'var(--cyan)' : 'var(--yellow)';
+  renderMonthlyInput();
+}
+
 function renderMonthlyInput(){
   const head = document.getElementById('monthly-input-head');
   const body = document.getElementById('monthly-input-body');
   const keys = ['applications','documentPass','firstInterview','firstPass','secondInterview','secondPass','offers','acceptances'];
   const labels = ['応募数','書類通過数','一次面接実施数','一次通過数','二次面接実施数','二次通過数','内定数','承諾数'];
   const colors = ['#00F5D4','#7B61FF','#FF6B6B','#FFE66D','#F8A5C2','#43E97B','#4ECDC4','#FF9F43'];
+  const is22 = targetPeriod === '22';
+  const TARGET = is22 ? MONTHLY_TARGET : MONTHLY_TARGET_23;
+  const accentColor = is22 ? '#7B61FF' : '#FFE66D';
+  const accentBg = is22 ? 'rgba(123,97,255,.12)' : 'rgba(255,230,109,.12)';
+  const accentBorder = is22 ? 'rgba(123,97,255,.3)' : 'rgba(255,230,109,.3)';
+  const periodLabel = is22 ? '22期目標' : '23期目標';
 
-  // Header
   head.innerHTML = `
     <th style="text-align:left;color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem;padding:8px 10px;border-bottom:1px solid var(--border)">月</th>
     <th style="color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem;padding:8px 10px;border-bottom:1px solid var(--border)">種別</th>
     ${labels.map((l,i)=>`<th style="text-align:right;color:${colors[i]};font-family:'Space Mono',monospace;font-size:.62rem;padding:8px 6px;border-bottom:1px solid var(--border)">${l}</th>`).join('')}
   `;
 
-  // Body: 2 rows per month (目標・実績)
-  body.innerHTML = MONTHLY.map((row,i)=>`
+  body.innerHTML = (is22 ? MONTHLY : Array(12).fill(null)).map((row, i)=>{
+    const tRow = TARGET[i];
+    return `
     <tr style="border-top:2px solid var(--border)">
-      <td rowspan="2" style="padding:6px 10px;color:var(--t2);font-family:'Space Mono',monospace;font-size:.72rem;vertical-align:middle;border-right:1px solid var(--border)">${row.month}</td>
-      <td style="padding:4px 8px">
-        <span style="background:rgba(123,97,255,.12);color:var(--purple);font-family:'Space Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:3px;white-space:nowrap">目標</span>
+      <td rowspan="${is22?2:1}" style="padding:6px 10px;color:var(--t2);font-family:'Space Mono',monospace;font-size:.72rem;vertical-align:middle;border-right:1px solid var(--border)">${tRow.month}</td>
+      <td style="padding:4px 8px${is22?'':';border-bottom:1px solid var(--border)'}">
+        <span style="background:${accentBg};color:${accentColor};font-family:'Space Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:3px;white-space:nowrap">${periodLabel}</span>
       </td>
       ${keys.map(k=>`
-        <td style="padding:3px 4px">
-          <input class="input-field" style="text-align:right;width:76px;border-color:rgba(123,97,255,.3);color:var(--purple)" type="number" min="0"
-            value="${MONTHLY_TARGET[i][k]}"
-            oninput="MONTHLY_TARGET[${i}]['${k}']=Number(this.value)||0">
+        <td style="padding:3px 4px${is22?'':';border-bottom:1px solid var(--border)'}">
+          <input class="input-field" style="text-align:right;width:76px;border-color:${accentBorder};color:${accentColor}" type="number" min="0"
+            value="${tRow[k]}"
+            oninput="${is22?`MONTHLY_TARGET`:`MONTHLY_TARGET_23`}[${i}]['${k}']=Number(this.value)||0">
         </td>`).join('')}
     </tr>
-    <tr>
+    ${is22 ? `<tr>
       <td style="padding:4px 8px;border-bottom:1px solid var(--border)">
         <span style="background:rgba(0,245,212,.1);color:var(--cyan);font-family:'Space Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:3px;white-space:nowrap">実績</span>
       </td>
@@ -1603,17 +1833,20 @@ function renderMonthlyInput(){
             value="${row[k]}"
             oninput="MONTHLY[${i}]['${k}']=Number(this.value)||0">
         </td>`).join('')}
-    </tr>`).join('');
+    </tr>` : ''}
+    `;
+  }).join('');
 }
 
 function saveMonthly(){
   const months = MONTHLY;
-  QUARTERLY[0] = calcQuarter('1Q(10-12月)', months.slice(6,9));
-  QUARTERLY[1] = calcQuarter('2Q(1-3月)',  months.slice(9,12));
-  QUARTERLY[2] = calcQuarter('3Q(4-6月)',  months.slice(0,3));
-  QUARTERLY[3] = calcQuarter('4Q(7-9月)',  months.slice(3,6));
+  QUARTERLY[0] = calcQuarter('1Q(9-11月)',  months.slice(0,3));
+  QUARTERLY[1] = calcQuarter('2Q(12-2月)', months.slice(3,6));
+  QUARTERLY[2] = calcQuarter('3Q(3-5月)',  months.slice(6,9));
+  QUARTERLY[3] = calcQuarter('4Q(6-8月)',  months.slice(9,12));
   try{ localStorage.setItem('ro_monthly', JSON.stringify(MONTHLY)); } catch(e){}
   try{ localStorage.setItem('ro_monthly_target', JSON.stringify(MONTHLY_TARGET)); } catch(e){}
+  try{ localStorage.setItem('ro_monthly_target_23', JSON.stringify(MONTHLY_TARGET_23)); } catch(e){}
   showToast();
   renderDashboard();
 }
@@ -1625,6 +1858,28 @@ function calcQuarter(label, months){
   });
   return q;
 }
+
+// 目標値データ（月別・23期）
+let MONTHLY_TARGET_23 = [
+  {month:'9月', applications:200,documentPass:120,firstInterview:98,firstPass:73,secondInterview:65,secondPass:46,offers:40,acceptances:35},
+  {month:'10月',applications:220,documentPass:132,firstInterview:107,firstPass:80,secondInterview:71,secondPass:50,offers:44,acceptances:38},
+  {month:'11月',applications:190,documentPass:114,firstInterview:93,firstPass:70,secondInterview:62,secondPass:44,offers:38,acceptances:33},
+  {month:'12月',applications:155,documentPass:93,firstInterview:75,firstPass:56,secondInterview:50,secondPass:35,offers:31,acceptances:27},
+  {month:'1月', applications:210,documentPass:126,firstInterview:102,firstPass:76,secondInterview:67,secondPass:47,offers:41,acceptances:36},
+  {month:'2月', applications:245,documentPass:147,firstInterview:120,firstPass:90,secondInterview:80,secondPass:56,offers:50,acceptances:44},
+  {month:'3月', applications:280,documentPass:168,firstInterview:136,firstPass:102,secondInterview:90,secondPass:64,offers:57,acceptances:50},
+  {month:'4月', applications:160,documentPass:96,firstInterview:80,firstPass:60,secondInterview:53,secondPass:37,offers:32,acceptances:28},
+  {month:'5月', applications:210,documentPass:126,firstInterview:103,firstPass:77,secondInterview:68,secondPass:48,offers:42,acceptances:37},
+  {month:'6月', applications:235,documentPass:141,firstInterview:114,firstPass:85,secondInterview:75,secondPass:53,offers:47,acceptances:41},
+  {month:'7月', applications:180,documentPass:108,firstInterview:90,firstPass:67,secondInterview:59,secondPass:41,offers:36,acceptances:31},
+  {month:'8月', applications:150,documentPass:90,firstInterview:73,firstPass:54,secondInterview:48,secondPass:34,offers:30,acceptances:26},
+];
+
+// 面接官目標（23期）
+let IV_TARGET_23 = {};
+
+// 現在選択中の目標期
+let targetPeriod = '22';
 
 // ---- MEDIA INPUT ----
 const IV_COLORS = ['#00F5D4','#7B61FF','#FF6B6B','#FFE66D','#43E97B','#F8A5C2','#FF9F43','#4ECDC4'];
@@ -1740,13 +1995,39 @@ function saveBudgetInput(){
 }
 
 // ---- INTERVIEWER INPUT ----
+let ivPeriod = '22';
+
+function switchIVPeriod(period){
+  ivPeriod = period;
+  const is22 = period === '22';
+  document.getElementById('iv-period-btn-22').style.background = is22 ? 'rgba(0,245,212,.12)' : 'transparent';
+  document.getElementById('iv-period-btn-22').style.color = is22 ? 'var(--cyan)' : 'var(--t2)';
+  document.getElementById('iv-period-btn-22').style.fontWeight = is22 ? '700' : '400';
+  document.getElementById('iv-period-btn-23').style.background = !is22 ? 'rgba(255,230,109,.12)' : 'transparent';
+  document.getElementById('iv-period-btn-23').style.color = !is22 ? 'var(--yellow)' : 'var(--t2)';
+  document.getElementById('iv-period-btn-23').style.fontWeight = !is22 ? '700' : '400';
+  const badge = document.getElementById('iv-period-badge');
+  badge.textContent = is22 ? '22期 目標＆実績' : '23期 目標（来期計画）';
+  badge.style.background = is22 ? 'rgba(0,245,212,.08)' : 'rgba(255,230,109,.08)';
+  badge.style.borderColor = is22 ? 'rgba(0,245,212,.3)' : 'rgba(255,230,109,.3)';
+  badge.style.color = is22 ? 'var(--cyan)' : 'var(--yellow)';
+  renderIVInput();
+}
+
 function renderIVInput(){
   const keys = ['applications','documentPass','firstInterview','firstPass','secondInterview','secondPass','offers','acceptances'];
   const labels = ['応募数','書類通過数','一次面接実施数','一次通過数','二次面接実施数','二次通過数','内定数','承諾数'];
   const colors = ['#00F5D4','#7B61FF','#FF6B6B','#FFE66D','#F8A5C2','#43E97B','#4ECDC4','#FF9F43'];
+  const is22 = ivPeriod === '22';
+  const accentColor = is22 ? '#7B61FF' : '#FFE66D';
+  const accentBg = is22 ? 'rgba(123,97,255,.12)' : 'rgba(255,230,109,.12)';
+  const accentBorder = is22 ? 'rgba(123,97,255,.3)' : 'rgba(255,230,109,.3)';
+  const periodLabel = is22 ? '22期目標' : '23期目標';
 
   document.getElementById('iv-input-cards').innerHTML = INTERVIEWERS.map((iv,i)=>{
     if(!iv.target) iv.target = {applications:0,documentPass:0,firstInterview:0,firstPass:0,secondInterview:0,secondPass:0,offers:0,acceptances:0};
+    if(!IV_TARGET_23[i]) IV_TARGET_23[i] = {applications:0,documentPass:0,firstInterview:0,firstPass:0,secondInterview:0,secondPass:0,offers:0,acceptances:0};
+    const TARGET = is22 ? iv.target : IV_TARGET_23[i];
     return `
     <div class="iv-input-card" style="border-left:3px solid ${iv.color}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -1769,16 +2050,17 @@ function renderIVInput(){
       <!-- 目標行 -->
       <div style="display:grid;grid-template-columns:60px repeat(8,1fr);gap:6px;margin-bottom:6px;align-items:center">
         <div style="display:flex;align-items:center;justify-content:center">
-          <span style="background:rgba(123,97,255,.12);color:var(--purple);font-family:'Space Mono',monospace;font-size:.6rem;padding:3px 7px;border-radius:3px">目標</span>
+          <span style="background:${accentBg};color:${accentColor};font-family:'Space Mono',monospace;font-size:.6rem;padding:3px 7px;border-radius:3px">${periodLabel}</span>
         </div>
         ${keys.map(k=>`
           <input class="input-field" type="number" min="0"
-            value="${iv.target[k]||0}"
-            oninput="if(!INTERVIEWERS[${i}].target)INTERVIEWERS[${i}].target={};INTERVIEWERS[${i}].target['${k}']=Number(this.value)||0"
-            style="text-align:right;padding:5px 6px;border-color:rgba(123,97,255,.3);color:var(--purple)">`).join('')}
+            value="${TARGET[k]||0}"
+            oninput="${is22?`if(!INTERVIEWERS[${i}].target)INTERVIEWERS[${i}].target={};INTERVIEWERS[${i}].target['${k}']=Number(this.value)||0`:`if(!IV_TARGET_23[${i}])IV_TARGET_23[${i}]={};IV_TARGET_23[${i}]['${k}']=Number(this.value)||0`}"
+            style="text-align:right;padding:5px 6px;border-color:${accentBorder};color:${accentColor}">`).join('')}
       </div>
 
-      <!-- 実績行 -->
+      <!-- 実績行（22期のみ表示） -->
+      ${is22 ? `
       <div style="display:grid;grid-template-columns:60px repeat(8,1fr);gap:6px;align-items:center">
         <div style="display:flex;align-items:center;justify-content:center">
           <span style="background:rgba(0,245,212,.1);color:var(--cyan);font-family:'Space Mono',monospace;font-size:.6rem;padding:3px 7px;border-radius:3px">実績</span>
@@ -1795,12 +2077,12 @@ function renderIVInput(){
         <div style="text-align:center;color:var(--t3);font-family:'Space Mono',monospace;font-size:.58rem">達成率</div>
         ${keys.map(k=>{
           const actual = iv[k]||0;
-          const target = iv.target[k]||1;
-          const rate = Math.round(actual/target*100);
+          const tgt = (iv.target[k])||1;
+          const rate = Math.round(actual/tgt*100);
           const col = rate>=100?'#43E97B':rate>=80?'#FFE66D':'#FF6B6B';
           return `<div style="text-align:right;font-family:'Space Mono',monospace;font-size:.68rem;font-weight:700;color:${col}">${rate}%</div>`;
         }).join('')}
-      </div>
+      </div>` : ''}
     </div>`;
   }).join('');
 }
@@ -1823,6 +2105,7 @@ function deleteIV(i){
 
 function saveInterviewers(){
   try{ localStorage.setItem('ro_interviewers', JSON.stringify(INTERVIEWERS)); } catch(e){}
+  try{ localStorage.setItem('ro_iv_target_23', JSON.stringify(IV_TARGET_23)); } catch(e){}
   showToast();
   renderDashboard();
 }
