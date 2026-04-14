@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RecruitOS | 採用管理システム</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #070B14;
+  --bg2: #0D1526;
+  --card: #0F1A2E;
+  --card2: #152035;
+  --border: #1A2A45;
+  --cyan: #00F5D4;
+  --purple: #7B61FF;
+  --red: #FF6B6B;
+  --yellow: #FFE66D;
+  --green: #43E97B;
+  --pink: #F8A5C2;
+  --orange: #FF9F43;
+  --t1: #E8F4F8;
+  --t2: #7A8FA6;
+  --t3: #3D5A73;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--t1);font-family:'DM Sans',sans-serif;display:flex;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--cyan)}
+
+/* NAV */
+#nav{position:fixed;left:0;top:0;width:220px;height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+.nav-logo{padding:24px 20px;border-bottom:1px solid var(--border)}
+.nav-logo h1{font-family:'Syne',sans-serif;font-size:1.25rem;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-logo p{color:var(--t3);font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:.1em;margin-top:3px}
+.nav-links{padding:16px 10px;flex:1}
+.nav-section{color:var(--t3);font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:.1em;padding:0 10px;margin-bottom:8px}
+.nav-link{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;margin-bottom:3px;cursor:pointer;transition:all .2s;color:var(--t2);font-size:.825rem;font-weight:400;border-left:2px solid transparent;user-select:none}
+.nav-link:hover{color:var(--cyan);background:rgba(0,245,212,.05)}
+.nav-link.active{color:var(--cyan);background:rgba(0,245,212,.08);border-left-color:var(--cyan);font-weight:600}
+.nav-link .icon{font-size:.9rem;opacity:.7}
+.nav-link.active .icon{opacity:1}
+.nav-footer{padding:16px 20px;border-top:1px solid var(--border)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green);animation:pulse 2s ease-in-out infinite;display:inline-block;margin-right:8px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.nav-footer p{color:var(--t3);font-family:'Space Mono',monospace;font-size:.6rem}
+
+/* MAIN */
+#main{margin-left:220px;flex:1;min-height:100vh}
+.page{display:none;padding:28px 32px;animation:fadeUp .35s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* HEADER */
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}
+.page-title{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;letter-spacing:-.02em}
+.page-sub{color:var(--t2);font-size:.825rem;margin-top:3px}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:18px;transition:border-color .2s}
+.card:hover{border-color:rgba(0,245,212,.2)}
+.kpi-grid{display:grid;gap:14px;margin-bottom:20px}
+.kpi-grid-4{grid-template-columns:repeat(4,1fr)}
+.kpi-grid-5{grid-template-columns:repeat(5,1fr)}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:16px;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi-label{color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.05em;text-transform:uppercase}
+.kpi-value{font-family:'Space Mono',monospace;font-size:1.5rem;font-weight:700;margin-top:7px;line-height:1.1}
+.kpi-sub{color:var(--t2);font-size:.7rem;margin-top:4px}
+
+/* TABS */
+.tabs{display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:3px;width:fit-content;margin-bottom:18px}
+.tab{padding:7px 14px;border-radius:5px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.775rem;font-weight:400;background:transparent;color:var(--t2);transition:all .2s}
+.tab.active{background:rgba(0,245,212,.1);color:var(--cyan);font-weight:600}
+.tab:hover:not(.active){color:var(--t1)}
+
+/* TOGGLE CHIPS */
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--t2);cursor:pointer;font-size:.72rem;font-family:'DM Sans',sans-serif;transition:all .2s}
+.chip.active-chip{border-color:currentColor}
+
+/* CHART CONTAINERS */
+.chart-wrap{position:relative;width:100%;height:300px}
+.chart-wrap-sm{position:relative;width:100%;height:240px}
+.chart-wrap-h{position:relative;width:100%;height:260px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:18px}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.775rem}
+th{padding:9px 11px;color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem;letter-spacing:.04em;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+th:hover{color:var(--cyan)}
+td{padding:9px 11px;border-bottom:1px solid rgba(26,42,69,.5);white-space:nowrap}
+tr:hover td{background:var(--card2)}
+.mono{font-family:'Space Mono',monospace;font-size:.72rem}
+
+/* FUNNEL */
+.funnel-row{margin-bottom:10px}
+.funnel-meta{display:flex;justify-content:space-between;margin-bottom:4px;font-size:.75rem}
+.funnel-bar-bg{height:26px;background:var(--border);border-radius:4px;overflow:hidden}
+.funnel-bar-fill{height:100%;border-radius:4px;transition:width .8s ease}
+
+/* BUDGET BARS */
+.budget-row{display:grid;grid-template-columns:130px 1fr 75px 75px 52px;align-items:center;gap:14px;margin-bottom:12px}
+.prog-bg{height:7px;background:var(--border);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .8s ease}
+
+/* BADGE */
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-family:'Space Mono',monospace;font-size:.62rem;font-weight:700}
+
+/* INTERVIEWER CARDS */
+.iv-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:14px 16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px}
+.iv-card.selected{border-color:currentColor;background:rgba(0,245,212,.04)}
+.iv-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:#070B14;flex-shrink:0}
+.iv-name{font-size:.825rem;font-weight:600;color:var(--t1)}
+.iv-dept{font-size:.68rem;color:var(--t2);margin-top:1px}
+
+/* EDIT INPUT */
+.edit-input{width:95px;text-align:right;background:var(--border);border:1px solid var(--cyan);border-radius:4px;color:var(--cyan);padding:2px 6px;font-family:'Space Mono',monospace;font-size:.72rem;outline:none}
+.edit-input.yellow{border-color:var(--yellow);color:var(--yellow)}
+.btn{padding:9px 18px;border-radius:7px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;transition:all .2s}
+.btn-outline-cyan{background:rgba(0,245,212,.08);border:1px solid var(--cyan);color:var(--cyan)}
+.btn-outline-cyan:hover{background:rgba(0,245,212,.15)}
+.btn-outline-red{background:rgba(255,107,107,.08);border:1px solid var(--red);color:var(--red)}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="nav">
+  <div class="nav-logo">
+    <h1>RecruitOS</h1>
+    <p>TALENT INTELLIGENCE</p>
+  </div>
+  <div class="nav-links">
+    <div class="nav-section">NAVIGATION</div>
+    <div class="nav-link active" onclick="showPage('dashboard',this)" data-page="dashboard">
+      <span class="icon">◈</span>ダッシュボード
+    </div>
+    <div class="nav-link" onclick="showPage('media',this)" data-page="media">
+      <span class="icon">◉</span>媒体KPI管理
+    </div>
+    <div class="nav-link" onclick="showPage('budget',this)" data-page="budget">
+      <span class="icon">◎</span>予算管理
+    </div>
+  </div>
+  <div class="nav-footer">
+    <p><span class="status-dot"></span>SYSTEM ONLINE</p>
+    <p style="margin-top:6px;padding-left:15px">FY2024 DATA</p>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+
+<!-- ========== DASHBOARD ========== -->
+<div id="page-dashboard" class="page active">
+  <div class="page-header">
+    <div>
+      <div class="page-title">採用ダッシュボード</div>
+      <div class="page-sub">FY2024 採用実績データ（2024年4月〜2025年3月）</div>
+    </div>
+    <div class="tabs" id="view-tabs">
+      <button class="tab active" onclick="setViewMode('monthly',this)">月別</button>
+      <button class="tab" onclick="setViewMode('quarterly',this)">四半期別</button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid kpi-grid-4" id="dash-kpis"></div>
+
+  <!-- Sub tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="setSubView('overview',this)">トレンド概要</button>
+    <button class="tab" onclick="setSubView('funnel',this)">ファネル分析</button>
+    <button class="tab" onclick="setSubView('interviewer',this)">面接官別</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div id="sub-overview">
+    <div class="chips" id="metric-chips"></div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
+      <div class="tabs" style="margin-bottom:0">
+        <button class="tab active" onclick="setChartMode('bar',this)">棒グラフ</button>
+        <button class="tab" onclick="setChartMode('line',this)">折れ線</button>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:18px;padding:22px">
+      <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:16px" id="chart-label">月別採用トレンド</div>
+      <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px" id="table-label">月別詳細データ</div>
+      <div class="tbl-wrap"><table id="main-table"></table></div>
+    </div>
+  </div>
+
+  <!-- FUNNEL -->
+  <div id="sub-funnel" style="display:none">
+    <div class="grid-2">
+      <div class="card">
+        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:18px">採用ファネル（年間累計）</div>
+        <div id="funnel-bars"></div>
+      </div>
+      <div class="card">
+        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">ステージ間転換率</div>
+        <div class="chart-wrap"><canvas id="convChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERVIEWER -->
+  <div id="sub-interviewer" style="display:none">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px" id="iv-selector"></div>
+    <div class="grid-2" style="margin-bottom:18px">
+      <div class="card">
+        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">パフォーマンス比較（レーダー）</div>
+        <div style="position:relative;height:280px"><canvas id="radarChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">数値比較（棒グラフ）</div>
+        <div class="chart-wrap"><canvas id="ivBarChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">面接官別詳細データ</div>
+      <div class="tbl-wrap"><table id="iv-table"></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MEDIA ========== -->
+<div id="page-media" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">媒体別KPI管理</div>
+      <div class="page-sub">採用チャネルごとのパフォーマンス分析</div>
+    </div>
+  </div>
+  <div class="kpi-grid kpi-grid-5" id="media-kpis"></div>
+  <div class="grid-2">
+    <div class="card">
+      <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">媒体別 応募数 / 採用数</div>
+      <div class="chart-wrap-h"><canvas id="mediaBarChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">媒体別 採用単価（CPH）</div>
+      <div class="chart-wrap-h"><canvas id="cphChart"></canvas></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:18px">
+    <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:16px">予算消化状況</div>
+    <div id="media-budget-bars"></div>
+  </div>
+  <div class="card">
+    <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">媒体別KPI詳細テーブル <span style="color:var(--t3);font-size:.6rem">（ヘッダーをクリックで並び替え）</span></div>
+    <div class="tbl-wrap"><table id="media-table"></table></div>
+  </div>
+</div>
+
+<!-- ========== BUDGET ========== -->
+<div id="page-budget" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">予算管理</div>
+      <div class="page-sub">FY2024 採用予算 計画・実績・着地予測</div>
+    </div>
+    <button class="btn btn-outline-cyan" id="edit-btn" onclick="toggleEdit()">✎ 編集モード</button>
+  </div>
+  <div class="kpi-grid kpi-grid-4" id="budget-kpis"></div>
+  <div class="grid-2">
+    <div class="card">
+      <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">カテゴリ別予算配分</div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div style="position:relative;width:170px;height:170px;flex-shrink:0"><canvas id="pieChart"></canvas></div>
+        <div id="pie-legend" style="flex:1"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">カテゴリ別 計画 vs 実績 vs 予測</div>
+      <div class="chart-wrap-sm"><canvas id="budgetBarChart"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">予算明細</div>
+    <div class="tbl-wrap"><table id="budget-table"></table></div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:12px">凡例</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap" id="budget-legend"></div>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<script>
+// ========== DATA ==========
+const METRICS = [
+  {key:'applications',label:'応募数',color:'#00F5D4'},
+  {key:'documentPass',label:'書類通過数',color:'#7B61FF'},
+  {key:'firstInterview',label:'一次面接実施数',color:'#FF6B6B'},
+  {key:'firstPass',label:'一次通過数',color:'#FFE66D'},
+  {key:'secondInterview',label:'二次面接実施数',color:'#F8A5C2'},
+  {key:'secondPass',label:'二次通過数',color:'#43E97B'},
+  {key:'offers',label:'内定数',color:'#4ECDC4'},
+  {key:'acceptances',label:'承諾数',color:'#FF9F43'},
+];
+
+const MONTHLY = [
+  {month:'4月', applications:145,documentPass:87,firstInterview:72,firstPass:54,secondInterview:48,secondPass:32,offers:28,acceptances:24},
+  {month:'5月', applications:198,documentPass:118,firstInterview:95,firstPass:71,secondInterview:63,secondPass:44,offers:38,acceptances:33},
+  {month:'6月', applications:223,documentPass:134,firstInterview:108,firstPass:82,secondInterview:71,secondPass:52,offers:46,acceptances:40},
+  {month:'7月', applications:167,documentPass:101,firstInterview:84,firstPass:63,secondInterview:55,secondPass:38,offers:34,acceptances:29},
+  {month:'8月', applications:134,documentPass:80,firstInterview:66,firstPass:49,secondInterview:43,secondPass:30,offers:26,acceptances:22},
+  {month:'9月', applications:189,documentPass:113,firstInterview:92,firstPass:69,secondInterview:61,secondPass:43,offers:37,acceptances:32},
+  {month:'10月',applications:212,documentPass:127,firstInterview:103,firstPass:77,secondInterview:68,secondPass:48,offers:42,acceptances:37},
+  {month:'11月',applications:178,documentPass:107,firstInterview:88,firstPass:66,secondInterview:58,secondPass:41,offers:36,acceptances:31},
+  {month:'12月',applications:143,documentPass:86,firstInterview:70,firstPass:52,secondInterview:46,secondPass:32,offers:28,acceptances:24},
+  {month:'1月', applications:201,documentPass:121,firstInterview:98,firstPass:73,secondInterview:65,secondPass:46,offers:40,acceptances:35},
+  {month:'2月', applications:234,documentPass:140,firstInterview:114,firstPass:85,secondInterview:75,secondPass:53,offers:47,acceptances:41},
+  {month:'3月', applications:267,documentPass:160,firstInterview:130,firstPass:97,secondInterview:86,secondPass:61,offers:54,acceptances:47},
+];
+
+const QUARTERLY = [
+  {month:'Q1(4-6月)', applications:566,documentPass:339,firstInterview:275,firstPass:207,secondInterview:182,secondPass:128,offers:112,acceptances:97},
+  {month:'Q2(7-9月)', applications:490,documentPass:294,firstInterview:242,firstPass:181,secondInterview:159,secondPass:111,offers:97,acceptances:83},
+  {month:'Q3(10-12月)',applications:533,documentPass:320,firstInterview:261,firstPass:195,secondInterview:172,secondPass:121,offers:106,acceptances:92},
+  {month:'Q4(1-3月)', applications:702,documentPass:421,firstInterview:342,firstPass:255,secondInterview:226,secondPass:160,offers:141,acceptances:123},
+];
+
+const INTERVIEWERS = [
+  {id:0,name:'田中 健一',dept:'エンジニアリング',av:'TK',color:'#00F5D4', applications:312,documentPass:187,firstInterview:152,firstPass:114,secondInterview:101,secondPass:71,offers:62,acceptances:54},
+  {id:1,name:'佐藤 美咲',dept:'プロダクト',av:'SM',color:'#7B61FF', applications:245,documentPass:147,firstInterview:119,firstPass:89,secondInterview:79,secondPass:55,offers:48,acceptances:42},
+  {id:2,name:'鈴木 大輔',dept:'デザイン',av:'SD',color:'#FF6B6B', applications:178,documentPass:107,firstInterview:87,firstPass:65,secondInterview:57,secondPass:40,offers:35,acceptances:31},
+  {id:3,name:'伊藤 裕子',dept:'ビジネス開発',av:'IY',color:'#FFE66D', applications:289,documentPass:173,firstInterview:141,firstPass:105,secondInterview:93,secondPass:66,offers:57,acceptances:50},
+  {id:4,name:'渡辺 翔太',dept:'データサイエンス',av:'WS',color:'#43E97B', applications:267,documentPass:160,firstInterview:130,firstPass:97,secondInterview:86,secondPass:61,offers:53,acceptances:46},
+];
+
+const MEDIA = [
+  {name:'Green',type:'IT特化型転職',color:'#00F5D4',budget:2400000,spent:2100000,applications:423,cpa:4965,docRate:62.4,offerRate:8.7,hires:37,cph:56757},
+  {name:'Wantedly',type:'ソーシャル採用',color:'#7B61FF',budget:1200000,spent:980000,applications:312,cpa:3141,docRate:58.3,offerRate:7.4,hires:23,cph:42609},
+  {name:'LinkedIn',type:'プロSNS',color:'#FF6B6B',budget:1800000,spent:1650000,applications:198,cpa:8333,docRate:71.2,offerRate:12.1,hires:24,cph:68750},
+  {name:'リクルートエージェント',type:'人材紹介',color:'#FFE66D',budget:3600000,spent:3400000,applications:156,cpa:21795,docRate:78.8,offerRate:15.4,hires:24,cph:141667},
+  {name:'Indeed',type:'求人検索エンジン',color:'#F8A5C2',budget:960000,spent:820000,applications:534,cpa:1536,docRate:44.6,offerRate:4.3,hires:23,cph:35652},
+  {name:'自社採用サイト',type:'ダイレクト採用',color:'#43E97B',budget:600000,spent:540000,applications:267,cpa:2022,docRate:66.3,offerRate:9.7,hires:26,cph:20769},
+];
+
+const BUDGET_ITEMS = [
+  {id:0,cat:'求人媒体費',sub:'Green',planned:2400000,actual:2100000,forecast:2200000},
+  {id:1,cat:'求人媒体費',sub:'Wantedly',planned:1200000,actual:980000,forecast:1050000},
+  {id:2,cat:'求人媒体費',sub:'LinkedIn',planned:1800000,actual:1650000,forecast:1720000},
+  {id:3,cat:'人材紹介費',sub:'リクルートエージェント',planned:3600000,actual:3400000,forecast:3550000},
+  {id:4,cat:'求人媒体費',sub:'Indeed',planned:960000,actual:820000,forecast:880000},
+  {id:5,cat:'自社採用',sub:'自社採用サイト',planned:600000,actual:540000,forecast:570000},
+  {id:6,cat:'採用イベント',sub:'テックイベント協賛',planned:800000,actual:720000,forecast:760000},
+  {id:7,cat:'採用イベント',sub:'社内説明会',planned:300000,actual:280000,forecast:290000},
+  {id:8,cat:'採用ツール',sub:'ATS（採用管理）',planned:480000,actual:480000,forecast:480000},
+  {id:9,cat:'採用ツール',sub:'バックグラウンドチェック',planned:240000,actual:215000,forecast:225000},
+  {id:10,cat:'従業員紹介',sub:'リファーラルボーナス',planned:1200000,actual:850000,forecast:950000},
+  {id:11,cat:'その他',sub:'採用広報・ブランディング',planned:500000,actual:420000,forecast:460000},
+];
+const CAT_COLORS = {'求人媒体費':'#00F5D4','人材紹介費':'#7B61FF','自社採用':'#43E97B','採用イベント':'#FFE66D','採用ツール':'#FF6B6B','従業員紹介':'#F8A5C2','その他':'#FF9F43'};
+
+// ========== STATE ==========
+let viewMode = 'monthly';
+let subView = 'overview';
+let chartMode = 'bar';
+let selectedMetrics = ['applications','documentPass','firstPass','offers','acceptances'];
+let selectedIVs = [0,1];
+let editMode = false;
+let mediaSortKey = 'applications';
+let mediaSortDir = -1;
+
+// Chart instances
+let mainChartInst=null, convChartInst=null, radarChartInst=null, ivBarChartInst=null;
+let mediaBarInst=null, cphInst=null;
+let pieInst=null, budgetBarInst=null;
+
+// ========== HELPERS ==========
+const yen = n => n>=1000000?`¥${(n/1000000).toFixed(1)}M`:`¥${(n/1000).toFixed(0)}K`;
+const yenFull = n => `¥${n.toLocaleString()}`;
+const sum = (arr,key) => arr.reduce((s,r)=>s+(r[key]||0),0);
+const pct = (a,b) => b?((a/b)*100).toFixed(1):'0';
+
+function totals(data){
+  const t={};
+  METRICS.forEach(m=>{ t[m.key]=sum(data,m.key); });
+  return t;
+}
+
+// ========== NAVIGATION ==========
+function showPage(page, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  el.classList.add('active');
+  if(page==='dashboard') renderDashboard();
+  if(page==='media') renderMedia();
+  if(page==='budget') renderBudget();
+}
+
+// ========== DASHBOARD ==========
+function renderDashboard(){
+  const data = viewMode==='monthly'?MONTHLY:QUARTERLY;
+  const t = totals(data);
+  renderDashKPIs(t);
+  renderMetricChips();
+  renderMainChart(data);
+  renderMainTable(data);
+  if(subView==='funnel') renderFunnel(t);
+  if(subView==='interviewer') renderInterviewer();
+}
+
+function setViewMode(mode,el){
+  viewMode=mode;
+  document.querySelectorAll('#view-tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderDashboard();
+}
+
+function setSubView(sv,el){
+  subView=sv;
+  el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['overview','funnel','interviewer'].forEach(v=>{
+    document.getElementById('sub-'+v).style.display = v===sv?'block':'none';
+  });
+  if(sv==='funnel'){
+    const data=viewMode==='monthly'?MONTHLY:QUARTERLY;
+    renderFunnel(totals(data));
+  }
+  if(sv==='interviewer') renderInterviewer();
+}
+
+function setChartMode(mode,el){
+  chartMode=mode;
+  el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderMainChart(viewMode==='monthly'?MONTHLY:QUARTERLY);
+}
+
+function renderDashKPIs(t){
+  const data=viewMode==='monthly'?MONTHLY:QUARTERLY;
+  const tt=totals(data);
+  const items=[
+    {label:'総応募数',value:tt.applications.toLocaleString(),unit:'件',color:'#00F5D4'},
+    {label:'内定承諾数',value:tt.acceptances.toLocaleString(),unit:'人',color:'#43E97B'},
+    {label:'書類通過率',value:pct(tt.documentPass,tt.applications),unit:'%',color:'#7B61FF'},
+    {label:'最終内定率',value:pct(tt.acceptances,tt.applications),unit:'%',color:'#FFE66D'},
+  ];
+  document.getElementById('dash-kpis').innerHTML = items.map(k=>`
+    <div class="kpi-card" style="--c:${k.color}">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${k.color}"></div>
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value" style="color:${k.color}">${k.value}<span style="color:var(--t2);font-size:.9rem;margin-left:3px">${k.unit}</span></div>
+    </div>`).join('');
+}
+
+function renderMetricChips(){
+  document.getElementById('metric-chips').innerHTML = METRICS.map(m=>`
+    <button class="chip ${selectedMetrics.includes(m.key)?'active-chip':''}"
+      style="${selectedMetrics.includes(m.key)?`color:${m.color};border-color:${m.color};background:${m.color}18`:''}"
+      onclick="toggleMetric('${m.key}',this,'${m.color}')">${m.label}</button>
+  `).join('');
+}
+
+function toggleMetric(key,el,color){
+  if(selectedMetrics.includes(key)){
+    if(selectedMetrics.length===1) return;
+    selectedMetrics=selectedMetrics.filter(k=>k!==key);
+    el.classList.remove('active-chip');
+    el.style.color=''; el.style.borderColor=''; el.style.background='';
+  } else {
+    selectedMetrics.push(key);
+    el.classList.add('active-chip');
+    el.style.color=color; el.style.borderColor=color; el.style.background=color+'18';
+  }
+  renderMainChart(viewMode==='monthly'?MONTHLY:QUARTERLY);
+}
+
+function destroyChart(inst){ if(inst) try{inst.destroy()}catch(e){} return null; }
+
+function renderMainChart(data){
+  mainChartInst = destroyChart(mainChartInst);
+  document.getElementById('chart-label').textContent = viewMode==='monthly'?'月別採用トレンド':'四半期別採用推移';
+  const labels = data.map(d=>d.month);
+  const datasets = METRICS.filter(m=>selectedMetrics.includes(m.key)).map(m=>({
+    label:m.label, data:data.map(d=>d[m.key]),
+    backgroundColor: chartMode==='bar'?m.color+'BB':undefined,
+    borderColor: m.color,
+    fill:false, tension:.4, pointRadius:0,
+    borderWidth: chartMode==='bar'?0:2,
+    borderRadius: chartMode==='bar'?3:0,
+  }));
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  mainChartInst = new Chart(ctx,{
+    type: chartMode==='bar'?'bar':'line',
+    data:{labels,datasets},
+    options: chartOpts(false),
+  });
+}
+
+function chartOpts(horizontal){
+  return {
+    responsive:true, maintainAspectRatio:false,
+    indexAxis: horizontal?'y':'x',
+    plugins:{legend:{labels:{color:'#7A8FA6',font:{family:'DM Sans',size:11},boxWidth:12}},tooltip:{backgroundColor:'#0F1A2E',borderColor:'#1A2A45',borderWidth:1,titleColor:'#00F5D4',bodyColor:'#E8F4F8',callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed[horizontal?'x':'y']?.toLocaleString()??''}`}}},
+    scales:{
+      x:{grid:{color:'#1A2A45',drawTicks:false},ticks:{color:'#7A8FA6',font:{size:10}},border:{color:'#1A2A45'}},
+      y:{grid:{color:'#1A2A45',drawTicks:false},ticks:{color:'#7A8FA6',font:{size:10}},border:{display:false}},
+    },
+  };
+}
+
+function renderMainTable(data){
+  document.getElementById('table-label').textContent = viewMode==='monthly'?'月別詳細データ':'四半期別詳細データ';
+  const th = ['期間',...METRICS.map(m=>m.label)].map(h=>`<th style="text-align:${h==='期間'?'left':'right'}">${h}</th>`).join('');
+  const rows = data.map(row=>`
+    <tr>
+      <td class="mono" style="color:var(--t2)">${row.month}</td>
+      ${METRICS.map(m=>`<td class="mono" style="text-align:right;color:${m.color}">${row[m.key].toLocaleString()}</td>`).join('')}
+    </tr>`).join('');
+  document.getElementById('main-table').innerHTML = `<thead><tr>${th}</tr></thead><tbody>${rows}</tbody>`;
+}
+
+// FUNNEL
+function renderFunnel(t){
+  const max = t.applications||1;
+  document.getElementById('funnel-bars').innerHTML = METRICS.map((m,i)=>{
+    const val=t[m.key]||0;
+    const prev = i>0?t[METRICS[i-1].key]||1:val;
+    const rate = i>0?pct(val,prev):'100';
+    return `<div class="funnel-row">
+      <div class="funnel-meta">
+        <span style="color:var(--t2)">${m.label}</span>
+        <div style="display:flex;gap:12px">
+          ${i>0?`<span style="color:var(--t3);font-family:'Space Mono',monospace;font-size:.65rem">通過率 ${rate}%</span>`:''}
+          <span style="color:${m.color};font-family:'Space Mono',monospace;font-size:.72rem">${val.toLocaleString()}</span>
+        </div>
+      </div>
+      <div class="funnel-bar-bg">
+        <div class="funnel-bar-fill" style="width:${(val/max*100).toFixed(1)}%;background:linear-gradient(90deg,${m.color},${m.color}88)"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  convChartInst = destroyChart(convChartInst);
+  const convData = [
+    {label:'書類通過',rate:+pct(t.documentPass,t.applications)},
+    {label:'一次通過',rate:+pct(t.firstPass,t.firstInterview)},
+    {label:'二次通過',rate:+pct(t.secondPass,t.secondInterview)},
+    {label:'内定',rate:+pct(t.offers,t.secondPass)},
+    {label:'承諾',rate:+pct(t.acceptances,t.offers)},
+  ];
+  const ctx = document.getElementById('convChart').getContext('2d');
+  convChartInst = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:convData.map(d=>d.label),
+      datasets:[{data:convData.map(d=>d.rate),backgroundColor:'#7B61FFBB',borderRadius:4,borderSkipped:false}]
+    },
+    options:{
+      ...chartOpts(true),
+      plugins:{...chartOpts(true).plugins,legend:{display:false},tooltip:{...chartOpts(true).plugins.tooltip,callbacks:{label:ctx=>`転換率: ${ctx.parsed.x}%`}}},
+      scales:{...chartOpts(true).scales,x:{...chartOpts(true).scales.x,max:100,ticks:{...chartOpts(true).scales.x.ticks,callback:v=>`${v}%`}}},
+    }
+  });
+}
+
+// INTERVIEWER
+function renderInterviewer(){
+  // Selector
+  document.getElementById('iv-selector').innerHTML = INTERVIEWERS.map(iv=>`
+    <div class="iv-card ${selectedIVs.includes(iv.id)?'selected':''}" onclick="toggleIV(${iv.id})"
+      style="${selectedIVs.includes(iv.id)?`color:${iv.color};border-color:${iv.color}`:``}">
+      <div class="iv-avatar" style="background:${selectedIVs.includes(iv.id)?iv.color:'#1A2A45'};color:${selectedIVs.includes(iv.id)?'#070B14':'#7A8FA6'}">${iv.av}</div>
+      <div><div class="iv-name">${iv.name}</div><div class="iv-dept">${iv.dept}</div></div>
+    </div>`).join('');
+
+  const sel = INTERVIEWERS.filter(iv=>selectedIVs.includes(iv.id));
+
+  // Radar
+  radarChartInst = destroyChart(radarChartInst);
+  const maxVals = {};
+  METRICS.forEach(m=>{ maxVals[m.key]=Math.max(...INTERVIEWERS.map(iv=>iv[m.key])); });
+  const radarCtx = document.getElementById('radarChart').getContext('2d');
+  radarChartInst = new Chart(radarCtx,{
+    type:'radar',
+    data:{
+      labels:METRICS.map(m=>m.label),
+      datasets:sel.map(iv=>({
+        label:iv.name,
+        data:METRICS.map(m=>Math.round(iv[m.key]/maxVals[m.key]*100)),
+        borderColor:iv.color, backgroundColor:iv.color+'18', pointBackgroundColor:iv.color,
+        borderWidth:2, pointRadius:3,
+      }))
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#7A8FA6',font:{family:'DM Sans',size:11}}},tooltip:{backgroundColor:'#0F1A2E',borderColor:'#1A2A45',borderWidth:1,titleColor:'#00F5D4',bodyColor:'#E8F4F8'}},
+      scales:{r:{grid:{color:'#1A2A45'},ticks:{color:'#3D5A73',font:{size:9},backdropColor:'transparent'},pointLabels:{color:'#7A8FA6',font:{size:9}},angleLines:{color:'#1A2A45'}}},
+    }
+  });
+
+  // Bar comparison
+  ivBarChartInst = destroyChart(ivBarChartInst);
+  const ivBarCtx = document.getElementById('ivBarChart').getContext('2d');
+  ivBarChartInst = new Chart(ivBarCtx,{
+    type:'bar',
+    data:{
+      labels:METRICS.map(m=>m.label),
+      datasets:sel.map(iv=>({label:iv.name,data:METRICS.map(m=>iv[m.key]),backgroundColor:iv.color+'BB',borderRadius:3}))
+    },
+    options:chartOpts(false),
+  });
+
+  // Table
+  const th = ['面接官','部署',...METRICS.map(m=>m.label),'承諾率'].map(h=>`<th style="text-align:${h==='面接官'||h==='部署'?'left':'right'}">${h}</th>`).join('');
+  const rows = INTERVIEWERS.map((iv,i)=>`
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div style="width:22px;height:22px;border-radius:50%;background:${iv.color};color:#070B14;display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:700">${iv.av}</div>
+        <span style="color:var(--t1);font-weight:500">${iv.name}</span>
+      </div></td>
+      <td style="color:var(--t2)">${iv.dept}</td>
+      ${METRICS.map(m=>`<td class="mono" style="text-align:right;color:${m.color}">${iv[m.key].toLocaleString()}</td>`).join('')}
+      <td class="mono" style="text-align:right;color:#43E97B">${pct(iv.acceptances,iv.applications)}%</td>
+    </tr>`).join('');
+  document.getElementById('iv-table').innerHTML = `<thead><tr>${th}</tr></thead><tbody>${rows}</tbody>`;
+}
+
+function toggleIV(id){
+  if(selectedIVs.includes(id)){
+    if(selectedIVs.length===1) return;
+    selectedIVs=selectedIVs.filter(i=>i!==id);
+  } else {
+    selectedIVs.push(id);
+  }
+  renderInterviewer();
+}
+
+// ========== MEDIA ==========
+function renderMedia(){
+  const totBudget=sum(MEDIA,'budget'), totSpent=sum(MEDIA,'spent'), totApps=sum(MEDIA,'applications'), totHires=sum(MEDIA,'hires');
+  const avgCPH=totSpent/totHires;
+
+  document.getElementById('media-kpis').innerHTML=[
+    {label:'総予算',value:yen(totBudget),color:'#7B61FF'},
+    {label:'使用額',value:yen(totSpent),sub:`${pct(totSpent,totBudget)}% 消化`,color:'#FF6B6B'},
+    {label:'総応募数',value:totApps.toLocaleString(),color:'#00F5D4'},
+    {label:'総採用数',value:totHires.toString(),color:'#43E97B'},
+    {label:'平均CPH',value:yen(avgCPH),color:'#FFE66D'},
+  ].map(k=>`
+    <div class="kpi-card">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${k.color}"></div>
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value" style="color:${k.color}">${k.value}</div>
+      ${k.sub?`<div class="kpi-sub">${k.sub}</div>`:''}
+    </div>`).join('');
+
+  // Charts
+  mediaBarInst = destroyChart(mediaBarInst);
+  const mbCtx = document.getElementById('mediaBarChart').getContext('2d');
+  mediaBarInst = new Chart(mbCtx,{
+    type:'bar',
+    data:{labels:MEDIA.map(m=>m.name),datasets:[
+      {label:'応募数',data:MEDIA.map(m=>m.applications),backgroundColor:'#00F5D4BB',borderRadius:3},
+      {label:'採用数',data:MEDIA.map(m=>m.hires),backgroundColor:'#43E97BBB',borderRadius:3},
+    ]},
+    options:chartOpts(false),
+  });
+
+  const sorted=[...MEDIA].sort((a,b)=>a.cph-b.cph);
+  cphInst = destroyChart(cphInst);
+  const cphCtx = document.getElementById('cphChart').getContext('2d');
+  cphInst = new Chart(cphCtx,{
+    type:'bar',
+    data:{labels:sorted.map(m=>m.name),datasets:[{
+      label:'CPH',data:sorted.map(m=>m.cph),
+      backgroundColor:sorted.map(m=>m.color+'BB'),borderRadius:3,
+    }]},
+    options:{
+      ...chartOpts(true),
+      plugins:{...chartOpts(true).plugins,legend:{display:false},tooltip:{...chartOpts(true).plugins.tooltip,callbacks:{label:ctx=>`CPH: ${yen(ctx.parsed.x)}`}}},
+      scales:{...chartOpts(true).scales,x:{...chartOpts(true).scales.x,ticks:{...chartOpts(true).scales.x.ticks,callback:v=>yen(v)}}},
+    },
+  });
+
+  // Budget bars
+  document.getElementById('media-budget-bars').innerHTML = MEDIA.map(m=>{
+    const p=(m.spent/m.budget*100);
+    return `<div class="budget-row">
+      <span style="color:${m.color};font-size:.78rem;font-weight:600">${m.name}</span>
+      <div class="prog-bg"><div class="prog-fill" style="width:${Math.min(p,100).toFixed(1)}%;background:${p>95?'#FF6B6B':p>80?'#FFE66D':m.color}"></div></div>
+      <span class="mono" style="text-align:right;color:var(--t2)">${yen(m.budget)}</span>
+      <span class="mono" style="text-align:right;color:${m.color}">${yen(m.spent)}</span>
+      <span class="mono" style="text-align:right;color:${p>95?'#FF6B6B':'var(--t2)'}">${p.toFixed(0)}%</span>
+    </div>`;
+  }).join('');
+
+  renderMediaTable();
+}
+
+function renderMediaTable(){
+  const cols=[
+    {key:'name',label:'媒体名',right:false},
+    {key:'type',label:'タイプ',right:false},
+    {key:'budget',label:'予算',right:true,fmt:yen},
+    {key:'spent',label:'使用額',right:true,fmt:yen},
+    {key:'applications',label:'応募数',right:true,fmt:v=>v.toLocaleString()},
+    {key:'cpa',label:'CPA',right:true,fmt:yen},
+    {key:'docRate',label:'書類通過率',right:true,fmt:v=>v.toFixed(1)+'%'},
+    {key:'offerRate',label:'内定率',right:true,fmt:v=>v.toFixed(1)+'%'},
+    {key:'hires',label:'採用数',right:true,fmt:v=>v.toString()},
+    {key:'cph',label:'CPH',right:true,fmt:yen},
+  ];
+  const th=cols.map(c=>`<th style="text-align:${c.right?'right':'left'}" onclick="${c.right?`mediaSort('${c.key}')`:''}">${c.label}${c.right&&mediaSortKey===c.key?(mediaSortDir<0?' ↓':' ↑'):''}</th>`).join('');
+  const sorted=[...MEDIA].sort((a,b)=>(a[mediaSortKey]-b[mediaSortKey])*mediaSortDir*-1);
+  const rows=sorted.map(m=>`<tr>
+    <td><div style="display:flex;align-items:center;gap:7px"><div style="width:7px;height:7px;border-radius:50%;background:${m.color}"></div><span style="color:var(--t1);font-weight:600">${m.name}</span></div></td>
+    <td style="color:var(--t2)">${m.type}</td>
+    <td class="mono" style="text-align:right;color:var(--t2)">${yen(m.budget)}</td>
+    <td class="mono" style="text-align:right;color:${m.color}">${yen(m.spent)}</td>
+    <td class="mono" style="text-align:right;color:#00F5D4">${m.applications.toLocaleString()}</td>
+    <td class="mono" style="text-align:right;color:var(--t2)">${yen(m.cpa)}</td>
+    <td class="mono" style="text-align:right;color:#7B61FF">${m.docRate.toFixed(1)}%</td>
+    <td class="mono" style="text-align:right;color:#FFE66D">${m.offerRate.toFixed(1)}%</td>
+    <td class="mono" style="text-align:right;color:#43E97B;font-weight:700">${m.hires}</td>
+    <td class="mono" style="text-align:right;color:${m.cph<60000?'#43E97B':m.cph<100000?'#FFE66D':'#FF6B6B'}">${yen(m.cph)}</td>
+  </tr>`).join('');
+  document.getElementById('media-table').innerHTML=`<thead><tr>${th}</tr></thead><tbody>${rows}</tbody>`;
+}
+
+function mediaSort(key){
+  if(mediaSortKey===key) mediaSortDir*=-1;
+  else{ mediaSortKey=key; mediaSortDir=-1; }
+  renderMediaTable();
+}
+
+// ========== BUDGET ==========
+function renderBudget(){
+  const totP=sum(BUDGET_ITEMS,'planned'), totA=sum(BUDGET_ITEMS,'actual'), totF=sum(BUDGET_ITEMS,'forecast');
+  const vari=totF-totP;
+
+  document.getElementById('budget-kpis').innerHTML=[
+    {label:'年間計画予算',value:yen(totP),color:'#7B61FF'},
+    {label:'実績（執行済み）',value:yen(totA),sub:`${pct(totA,totP)}% 消化`,color:'#00F5D4'},
+    {label:'着地予測',value:yen(totF),color:'#FFE66D'},
+    {label:'予実差異',value:(vari>=0?'+':'')+yen(vari),sub:`${((vari/totP)*100).toFixed(1)}%`,color:vari>0?'#FF6B6B':'#43E97B'},
+  ].map(k=>`
+    <div class="kpi-card">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${k.color}"></div>
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value" style="color:${k.color}">${k.value}</div>
+      ${k.sub?`<div class="kpi-sub">${k.sub}</div>`:''}
+    </div>`).join('');
+
+  // Pie
+  const cats=[...new Set(BUDGET_ITEMS.map(i=>i.cat))];
+  const catData=cats.map(c=>({name:c,val:sum(BUDGET_ITEMS.filter(i=>i.cat===c),'planned'),color:CAT_COLORS[c]||'#aaa'}));
+  pieInst=destroyChart(pieInst);
+  const pieCtx=document.getElementById('pieChart').getContext('2d');
+  pieInst=new Chart(pieCtx,{
+    type:'doughnut',
+    data:{labels:catData.map(d=>d.name),datasets:[{data:catData.map(d=>d.val),backgroundColor:catData.map(d=>d.color+'BB'),borderColor:catData.map(d=>d.color),borderWidth:1,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:false},tooltip:{backgroundColor:'#0F1A2E',borderColor:'#1A2A45',borderWidth:1,titleColor:'#00F5D4',bodyColor:'#E8F4F8',callbacks:{label:ctx=>`${yen(ctx.raw)} (${pct(ctx.raw,totP)}%)`}}}},
+  });
+
+  document.getElementById('pie-legend').innerHTML=catData.map(d=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+      <div style="display:flex;align-items:center;gap:7px">
+        <div style="width:7px;height:7px;border-radius:2px;background:${d.color}"></div>
+        <span style="color:var(--t2);font-size:.75rem">${d.name}</span>
+      </div>
+      <div style="text-align:right">
+        <div style="color:${d.color};font-family:'Space Mono',monospace;font-size:.7rem">${yen(d.val)}</div>
+        <div style="color:var(--t3);font-size:.62rem">${pct(d.val,totP)}%</div>
+      </div>
+    </div>`).join('');
+
+  // Bar
+  budgetBarInst=destroyChart(budgetBarInst);
+  const bbCtx=document.getElementById('budgetBarChart').getContext('2d');
+  budgetBarInst=new Chart(bbCtx,{
+    type:'bar',
+    data:{
+      labels:catData.map(d=>d.name),
+      datasets:[
+        {label:'計画',data:catData.map(d=>d.val),backgroundColor:'#7B61FF88',borderRadius:3},
+        {label:'実績',data:catData.map(c=>sum(BUDGET_ITEMS.filter(i=>i.cat===c.name),'actual')),backgroundColor:'#00F5D488',borderRadius:3},
+        {label:'予測',data:catData.map(c=>sum(BUDGET_ITEMS.filter(i=>i.cat===c.name),'forecast')),backgroundColor:'#FFE66D88',borderRadius:3},
+      ]
+    },
+    options:{
+      ...chartOpts(false),
+      plugins:{...chartOpts(false).plugins,tooltip:{...chartOpts(false).plugins.tooltip,callbacks:{label:ctx=>`${ctx.dataset.label}: ${yen(ctx.parsed.y)}`}}},
+      scales:{...chartOpts(false).scales,y:{...chartOpts(false).scales.y,ticks:{...chartOpts(false).scales.y.ticks,callback:v=>yen(v)}}},
+    },
+  });
+
+  renderBudgetTable();
+
+  document.getElementById('budget-legend').innerHTML=[
+    {color:'#7B61FF',label:'計画予算（年初計画）'},
+    {color:'#00F5D4',label:'実績（執行確定済み）'},
+    {color:'#FFE66D',label:'着地予測（年末想定）'},
+    {color:'#43E97B',label:'予実差異（予算内）'},
+    {color:'#FF6B6B',label:'予実差異（予算超過）'},
+  ].map(l=>`<div style="display:flex;align-items:center;gap:6px"><div style="width:9px;height:9px;border-radius:2px;background:${l.color}"></div><span style="color:var(--t2);font-size:.75rem">${l.label}</span></div>`).join('');
+}
+
+function renderBudgetTable(){
+  const cats=[...new Set(BUDGET_ITEMS.map(i=>i.cat))];
+  const totP=sum(BUDGET_ITEMS,'planned'), totA=sum(BUDGET_ITEMS,'actual'), totF=sum(BUDGET_ITEMS,'forecast');
+  const th=['カテゴリ','項目','計画予算','実績','着地予測','予実差異','消化率'].map(h=>`<th style="text-align:${h==='カテゴリ'||h==='項目'?'left':'right'}">${h}</th>`).join('');
+  let rows='';
+  cats.forEach(cat=>{
+    const items=BUDGET_ITEMS.filter(i=>i.cat===cat);
+    const color=CAT_COLORS[cat]||'#aaa';
+    const cP=sum(items,'planned'), cA=sum(items,'actual'), cF=sum(items,'forecast');
+    items.forEach((item,idx)=>{
+      const v=item.forecast-item.planned;
+      const cp=(item.actual/item.planned*100);
+      rows+=`<tr>
+        <td>${idx===0?`<div style="display:flex;align-items:center;gap:6px"><div style="width:6px;height:6px;border-radius:50%;background:${color}"></div><span style="color:${color};font-size:.75rem;font-weight:600">${cat}</span></div>`:''}</td>
+        <td style="color:var(--t2)">${item.sub}</td>
+        <td class="mono" style="text-align:right;color:var(--t2)">${yenFull(item.planned)}</td>
+        <td style="text-align:right">${editMode?`<input class="edit-input" value="${item.actual}" onchange="updateBudget(${item.id},'actual',this.value)">`:`<span class="mono" style="color:#00F5D4">${yenFull(item.actual)}</span>`}</td>
+        <td style="text-align:right">${editMode?`<input class="edit-input yellow" value="${item.forecast}" onchange="updateBudget(${item.id},'forecast',this.value)">`:`<span class="mono" style="color:#FFE66D">${yenFull(item.forecast)}</span>`}</td>
+        <td class="mono" style="text-align:right;color:${v>0?'#FF6B6B':'#43E97B'}">${v>=0?'+':''}${yenFull(v)}</td>
+        <td style="text-align:right">
+          <div style="display:flex;align-items:center;gap:7px;justify-content:flex-end">
+            <div style="width:55px;height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:${Math.min(cp,100).toFixed(1)}%;background:${cp>95?'#FF6B6B':color};border-radius:2px"></div></div>
+            <span class="mono" style="color:${cp>95?'#FF6B6B':'var(--t2)';min-width:32px}">${cp.toFixed(0)}%</span>
+          </div>
+        </td>
+      </tr>`;
+    });
+    const cv=cF-cP;
+    rows+=`<tr style="background:var(--bg2)">
+      <td colspan="2" class="mono" style="color:${color};font-size:.65rem;letter-spacing:.04em">▸ ${cat} 小計</td>
+      <td class="mono" style="text-align:right;color:var(--t2);font-weight:700">${yenFull(cP)}</td>
+      <td class="mono" style="text-align:right;color:#00F5D4;font-weight:700">${yenFull(cA)}</td>
+      <td class="mono" style="text-align:right;color:#FFE66D;font-weight:700">${yenFull(cF)}</td>
+      <td class="mono" style="text-align:right;color:${cv>0?'#FF6B6B':'#43E97B'};font-weight:700">${cv>=0?'+':''}${yenFull(cv)}</td>
+      <td class="mono" style="text-align:right;color:var(--t2)">${(cA/cP*100).toFixed(0)}%</td>
+    </tr>`;
+  });
+  const totV=totF-totP;
+  rows+=`<tr style="background:var(--card2)">
+    <td colspan="2" style="color:var(--t1);font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem">合計</td>
+    <td class="mono" style="text-align:right;color:#7B61FF;font-weight:700;font-size:.8rem">${yenFull(totP)}</td>
+    <td class="mono" style="text-align:right;color:#00F5D4;font-weight:700;font-size:.8rem">${yenFull(totA)}</td>
+    <td class="mono" style="text-align:right;color:#FFE66D;font-weight:700;font-size:.8rem">${yenFull(totF)}</td>
+    <td class="mono" style="text-align:right;color:${totV>0?'#FF6B6B':'#43E97B'};font-weight:700;font-size:.8rem">${totV>=0?'+':''}${yenFull(totV)}</td>
+    <td class="mono" style="text-align:right;color:var(--t2)">${(totA/totP*100).toFixed(0)}%</td>
+  </tr>`;
+  document.getElementById('budget-table').innerHTML=`<thead><tr>${th}</tr></thead><tbody>${rows}</tbody>`;
+}
+
+function updateBudget(id,field,val){
+  const item=BUDGET_ITEMS.find(i=>i.id===id);
+  if(item) item[field]=Number(val);
+  // re-render kpis only
+  const totP=sum(BUDGET_ITEMS,'planned'), totA=sum(BUDGET_ITEMS,'actual'), totF=sum(BUDGET_ITEMS,'forecast');
+  const vari=totF-totP;
+  document.getElementById('budget-kpis').querySelectorAll('.kpi-value')[3].textContent=(vari>=0?'+':'')+yen(vari);
+}
+
+function toggleEdit(){
+  editMode=!editMode;
+  const btn=document.getElementById('edit-btn');
+  btn.textContent=editMode?'✓ 保存する':'✎ 編集モード';
+  btn.className=`btn ${editMode?'btn-outline-red':'btn-outline-cyan'}`;
+  renderBudgetTable();
+  if(!editMode) renderBudget();
+}
+
+// ========== INIT ==========
+renderDashboard();
+</script>
+</body>
+</html>
