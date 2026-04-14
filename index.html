@@ -127,6 +127,18 @@ tr:hover td{background:var(--card2)}
 .btn-outline-cyan{background:rgba(0,245,212,.08);border:1px solid var(--cyan);color:var(--cyan)}
 .btn-outline-cyan:hover{background:rgba(0,245,212,.15)}
 .btn-outline-red{background:rgba(255,107,107,.08);border:1px solid var(--red);color:var(--red)}
+
+/* INPUT PAGE */
+.input-field{background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--t1);padding:6px 10px;font-family:'Space Mono',monospace;font-size:.72rem;width:100%;outline:none;transition:border-color .2s}
+.input-field:focus{border-color:var(--cyan)}
+.input-label{color:var(--t3);font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
+.input-group{display:flex;flex-direction:column;gap:3px}
+.media-input-card{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:16px;margin-bottom:12px;transition:border-color .2s}
+.media-input-card:hover{border-color:rgba(0,245,212,.2)}
+.iv-input-card{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:16px;margin-bottom:12px}
+.budget-input-row{display:grid;grid-template-columns:140px 160px 1fr 1fr 1fr 32px;gap:10px;align-items:end;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.del-btn{background:transparent;border:1px solid var(--border);color:var(--t3);width:28px;height:28px;border-radius:5px;cursor:pointer;font-size:.9rem;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.del-btn:hover{border-color:var(--red);color:var(--red)}
 </style>
 </head>
 <body>
@@ -147,6 +159,14 @@ tr:hover td{background:var(--card2)}
     </div>
     <div class="nav-link" onclick="showPage('budget',this)" data-page="budget">
       <span class="icon">◎</span>予算管理
+    </div>
+    <div style="height:1px;background:var(--border);margin:10px 0"></div>
+    <div class="nav-section" style="margin-top:4px">DATA INPUT</div>
+    <div class="nav-link" onclick="showPage('input',this)" data-page="input">
+      <span class="icon">✎</span>データ入力
+    </div>
+    <div class="nav-link" onclick="showPage('wiki',this)" data-page="wiki">
+      <span class="icon">◇</span>採用Wiki
     </div>
   </div>
   <div class="nav-footer">
@@ -296,6 +316,123 @@ tr:hover td{background:var(--card2)}
   </div>
 </div>
 
+
+<!-- ========== DATA INPUT ========== -->
+<div id="page-input" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">データ入力</div>
+      <div class="page-sub">採用実績・媒体KPI・予算データを入力してダッシュボードに反映</div>
+    </div>
+    <div id="save-toast" style="display:none;background:rgba(67,233,123,.12);border:1px solid #43E97B;color:#43E97B;padding:8px 16px;border-radius:7px;font-size:.78rem;font-family:'Space Mono',monospace">✓ 保存しました</div>
+  </div>
+
+  <!-- INPUT TABS -->
+  <div class="tabs" id="input-tabs" style="margin-bottom:20px">
+    <button class="tab active" onclick="setInputTab('monthly-input',this)">月別採用データ</button>
+    <button class="tab" onclick="setInputTab('media-input',this)">媒体KPIデータ</button>
+    <button class="tab" onclick="setInputTab('budget-input',this)">予算データ</button>
+    <button class="tab" onclick="setInputTab('interviewer-input',this)">面接官データ</button>
+  </div>
+
+  <!-- MONTHLY INPUT -->
+  <div id="monthly-input">
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem">月別採用実績データ <span style="color:var(--t3)">（各月の数値を入力してください）</span></div>
+        <button class="btn btn-outline-cyan" onclick="saveMonthly()" style="font-size:.75rem;padding:7px 14px">✓ 保存してダッシュボードに反映</button>
+      </div>
+      <div class="tbl-wrap">
+        <table id="monthly-input-table" style="font-size:.78rem">
+          <thead><tr id="monthly-input-head"></tr></thead>
+          <tbody id="monthly-input-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" style="padding:14px 18px;background:rgba(0,245,212,.04);border-color:rgba(0,245,212,.2)">
+      <div style="color:var(--cyan);font-size:.75rem;font-weight:600;margin-bottom:6px">💡 入力のヒント</div>
+      <div style="color:var(--t2);font-size:.75rem;line-height:1.7">
+        ・数値はすべて「件数」で入力してください（例：応募数 → 145）<br>
+        ・空欄のままにすると 0 として扱われます<br>
+        ・「保存してダッシュボードに反映」を押すと即座にグラフに反映されます
+      </div>
+    </div>
+  </div>
+
+  <!-- MEDIA INPUT -->
+  <div id="media-input" style="display:none">
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem">媒体別KPIデータ <span style="color:var(--t3)">（媒体ごとの数値を入力）</span></div>
+        <button class="btn btn-outline-cyan" onclick="saveMedia()" style="font-size:.75rem;padding:7px 14px">✓ 保存してダッシュボードに反映</button>
+      </div>
+      <div id="media-input-cards"></div>
+    </div>
+    <div class="card" style="padding:14px 18px;background:rgba(0,245,212,.04);border-color:rgba(0,245,212,.2)">
+      <div style="color:var(--cyan);font-size:.75rem;font-weight:600;margin-bottom:6px">💡 入力のヒント</div>
+      <div style="color:var(--t2);font-size:.75rem;line-height:1.7">
+        ・CPA（応募単価）・CPH（採用単価）は自動計算されます<br>
+        ・書類通過率・内定率は % で入力（例：62.4）<br>
+        ・媒体の追加・削除は「媒体を追加」ボタンから行えます
+      </div>
+    </div>
+  </div>
+
+  <!-- BUDGET INPUT -->
+  <div id="budget-input" style="display:none">
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem">予算明細データ <span style="color:var(--t3)">（計画・実績・予測を入力）</span></div>
+        <button class="btn btn-outline-cyan" onclick="saveBudgetInput()" style="font-size:.75rem;padding:7px 14px">✓ 保存してダッシュボードに反映</button>
+      </div>
+      <div id="budget-input-rows"></div>
+      <button onclick="addBudgetRow()" style="margin-top:14px;background:transparent;border:1px dashed var(--border);color:var(--t2);padding:9px 16px;border-radius:7px;cursor:pointer;font-size:.78rem;width:100%;transition:all .2s" onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t2)'">
+        ＋ 予算項目を追加
+      </button>
+    </div>
+  </div>
+
+  <!-- INTERVIEWER INPUT -->
+  <div id="interviewer-input" style="display:none">
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem">面接官データ <span style="color:var(--t3)">（面接官ごとの担当実績を入力）</span></div>
+        <button class="btn btn-outline-cyan" onclick="saveInterviewers()" style="font-size:.75rem;padding:7px 14px">✓ 保存してダッシュボードに反映</button>
+      </div>
+      <div id="iv-input-cards"></div>
+      <button onclick="addIVRow()" style="margin-top:14px;background:transparent;border:1px dashed var(--border);color:var(--t2);padding:9px 16px;border-radius:7px;cursor:pointer;font-size:.78rem;width:100%;transition:all .2s" onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t2)'">
+        ＋ 面接官を追加
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== WIKI ========== -->
+<div id="page-wiki" class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">採用Wiki</div>
+      <div class="page-sub">採用業務に関するガイドライン・チェック項目・基準をまとめた社内リファレンス</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div id="wiki-toast" style="display:none;background:rgba(67,233,123,.12);border:1px solid #43E97B;color:#43E97B;padding:7px 14px;border-radius:7px;font-size:.75rem;font-family:'Space Mono',monospace">✓ 保存しました</div>
+      <button id="wiki-edit-btn" class="btn btn-outline-cyan" onclick="toggleWikiEdit()" style="font-size:.75rem;padding:8px 16px">✎ 編集モード</button>
+    </div>
+  </div>
+  <div class="tabs" id="wiki-tabs" style="margin-bottom:22px">
+    <button class="tab active" onclick="setWikiTab('interview-tab',this)">面接評価項目</button>
+    <button class="tab" onclick="setWikiTab('screening-tab',this)">書類選考基準</button>
+    <button class="tab" onclick="setWikiTab('shapo-tab',this)">社内報ガイドライン</button>
+    <button class="tab" onclick="setWikiTab('media-tab',this)">媒体情報</button>
+    <button class="tab" onclick="setWikiTab('tasks-tab',this)">タスク管理</button>
+  </div>
+  <div id="interview-tab"></div>
+  <div id="screening-tab" style="display:none"></div>
+  <div id="shapo-tab" style="display:none"></div>
+  <div id="media-tab" style="display:none"></div>
+  <div id="tasks-tab" style="display:none"></div>
+</div>
 </div><!-- end main -->
 
 <script>
@@ -327,18 +464,34 @@ const MONTHLY = [
 ];
 
 const QUARTERLY = [
-  {month:'Q1(4-6月)', applications:566,documentPass:339,firstInterview:275,firstPass:207,secondInterview:182,secondPass:128,offers:112,acceptances:97},
-  {month:'Q2(7-9月)', applications:490,documentPass:294,firstInterview:242,firstPass:181,secondInterview:159,secondPass:111,offers:97,acceptances:83},
-  {month:'Q3(10-12月)',applications:533,documentPass:320,firstInterview:261,firstPass:195,secondInterview:172,secondPass:121,offers:106,acceptances:92},
-  {month:'Q4(1-3月)', applications:702,documentPass:421,firstInterview:342,firstPass:255,secondInterview:226,secondPass:160,offers:141,acceptances:123},
+  {month:'1Q(10-12月)',applications:533,documentPass:320,firstInterview:261,firstPass:195,secondInterview:172,secondPass:121,offers:106,acceptances:92},
+  {month:'2Q(1-3月)', applications:702,documentPass:421,firstInterview:342,firstPass:255,secondInterview:226,secondPass:160,offers:141,acceptances:123},
+  {month:'3Q(4-6月)', applications:566,documentPass:339,firstInterview:275,firstPass:207,secondInterview:182,secondPass:128,offers:112,acceptances:97},
+  {month:'4Q(7-9月)', applications:490,documentPass:294,firstInterview:242,firstPass:181,secondInterview:159,secondPass:111,offers:97,acceptances:83},
+];
+
+// 目標値データ（月別）
+let MONTHLY_TARGET = [
+  {month:'4月', applications:150,documentPass:90,firstInterview:75,firstPass:56,secondInterview:50,secondPass:35,offers:30,acceptances:26},
+  {month:'5月', applications:200,documentPass:120,firstInterview:98,firstPass:73,secondInterview:65,secondPass:46,offers:40,acceptances:35},
+  {month:'6月', applications:220,documentPass:132,firstInterview:107,firstPass:80,secondInterview:70,secondPass:50,offers:44,acceptances:38},
+  {month:'7月', applications:170,documentPass:102,firstInterview:85,firstPass:64,secondInterview:56,secondPass:39,offers:34,acceptances:30},
+  {month:'8月', applications:140,documentPass:84,firstInterview:68,firstPass:51,secondInterview:45,secondPass:32,offers:28,acceptances:24},
+  {month:'9月', applications:190,documentPass:114,firstInterview:93,firstPass:70,secondInterview:62,secondPass:44,offers:38,acceptances:33},
+  {month:'10月',applications:210,documentPass:126,firstInterview:102,firstPass:76,secondInterview:67,secondPass:47,offers:41,acceptances:36},
+  {month:'11月',applications:180,documentPass:108,firstInterview:89,firstPass:67,secondInterview:59,secondPass:42,offers:37,acceptances:32},
+  {month:'12月',applications:145,documentPass:87,firstInterview:71,firstPass:53,secondInterview:47,secondPass:33,offers:29,acceptances:25},
+  {month:'1月', applications:200,documentPass:120,firstInterview:97,firstPass:72,secondInterview:64,secondPass:45,offers:39,acceptances:34},
+  {month:'2月', applications:235,documentPass:141,firstInterview:115,firstPass:86,secondInterview:76,secondPass:54,offers:48,acceptances:42},
+  {month:'3月', applications:265,documentPass:159,firstInterview:129,firstPass:96,secondInterview:85,secondPass:60,offers:53,acceptances:46},
 ];
 
 const INTERVIEWERS = [
-  {id:0,name:'田中 健一',dept:'エンジニアリング',av:'TK',color:'#00F5D4', applications:312,documentPass:187,firstInterview:152,firstPass:114,secondInterview:101,secondPass:71,offers:62,acceptances:54},
-  {id:1,name:'佐藤 美咲',dept:'プロダクト',av:'SM',color:'#7B61FF', applications:245,documentPass:147,firstInterview:119,firstPass:89,secondInterview:79,secondPass:55,offers:48,acceptances:42},
-  {id:2,name:'鈴木 大輔',dept:'デザイン',av:'SD',color:'#FF6B6B', applications:178,documentPass:107,firstInterview:87,firstPass:65,secondInterview:57,secondPass:40,offers:35,acceptances:31},
-  {id:3,name:'伊藤 裕子',dept:'ビジネス開発',av:'IY',color:'#FFE66D', applications:289,documentPass:173,firstInterview:141,firstPass:105,secondInterview:93,secondPass:66,offers:57,acceptances:50},
-  {id:4,name:'渡辺 翔太',dept:'データサイエンス',av:'WS',color:'#43E97B', applications:267,documentPass:160,firstInterview:130,firstPass:97,secondInterview:86,secondPass:61,offers:53,acceptances:46},
+  {id:0,name:'田中 健一',dept:'エンジニアリング',av:'TK',color:'#00F5D4', applications:312,documentPass:187,firstInterview:152,firstPass:114,secondInterview:101,secondPass:71,offers:62,acceptances:54, target:{applications:320,documentPass:192,firstInterview:156,firstPass:117,secondInterview:104,secondPass:73,offers:64,acceptances:56}},
+  {id:1,name:'佐藤 美咲',dept:'プロダクト',av:'SM',color:'#7B61FF', applications:245,documentPass:147,firstInterview:119,firstPass:89,secondInterview:79,secondPass:55,offers:48,acceptances:42, target:{applications:250,documentPass:150,firstInterview:122,firstPass:91,secondInterview:81,secondPass:57,offers:50,acceptances:44}},
+  {id:2,name:'鈴木 大輔',dept:'デザイン',av:'SD',color:'#FF6B6B', applications:178,documentPass:107,firstInterview:87,firstPass:65,secondInterview:57,secondPass:40,offers:35,acceptances:31, target:{applications:180,documentPass:108,firstInterview:88,firstPass:66,secondInterview:58,secondPass:41,offers:36,acceptances:32}},
+  {id:3,name:'伊藤 裕子',dept:'ビジネス開発',av:'IY',color:'#FFE66D', applications:289,documentPass:173,firstInterview:141,firstPass:105,secondInterview:93,secondPass:66,offers:57,acceptances:50, target:{applications:295,documentPass:177,firstInterview:144,firstPass:108,secondInterview:95,secondPass:68,offers:59,acceptances:52}},
+  {id:4,name:'渡辺 翔太',dept:'データサイエンス',av:'WS',color:'#43E97B', applications:267,documentPass:160,firstInterview:130,firstPass:97,secondInterview:86,secondPass:61,offers:53,acceptances:46, target:{applications:270,documentPass:162,firstInterview:132,firstPass:99,secondInterview:88,secondPass:62,offers:54,acceptances:47}},
 ];
 
 const MEDIA = [
@@ -402,6 +555,8 @@ function showPage(page, el){
   if(page==='dashboard') renderDashboard();
   if(page==='media') renderMedia();
   if(page==='budget') renderBudget();
+  if(page==='input') renderMonthlyInput();
+  if(page==='wiki') renderWiki();
 }
 
 // ========== DASHBOARD ==========
@@ -836,7 +991,7 @@ function renderBudgetTable(){
         <td style="text-align:right">
           <div style="display:flex;align-items:center;gap:7px;justify-content:flex-end">
             <div style="width:55px;height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:${Math.min(cp,100).toFixed(1)}%;background:${cp>95?'#FF6B6B':color};border-radius:2px"></div></div>
-            <span class="mono" style="color:${cp>95?'#FF6B6B':'var(--t2)';min-width:32px}">${cp.toFixed(0)}%</span>
+            <span class="mono" style="color:${cp>95?'#FF6B6B':'var(--t2)'};min-width:32px">${cp.toFixed(0)}%</span>
           </div>
         </td>
       </tr>`;
@@ -881,8 +1036,797 @@ function toggleEdit(){
   if(!editMode) renderBudget();
 }
 
+
+// ========== WIKI DATA ==========
+const WIKI_COLORS = ['#00F5D4','#7B61FF','#FF6B6B','#FFE66D','#43E97B','#F8A5C2','#FF9F43','#4ECDC4'];
+let wikiEditMode = false;
+
+const DEFAULT_WIKI = {
+  interview: [
+    {group:'事前確認', color:'#00F5D4', tag:'印象・礼儀', items:[
+      {no:'1', title:'アカウント名前設定', purpose:'客観視・良い印象を持たれる努力ができるか'},
+      {no:'2', title:'背景のマスク設定', purpose:'客観視・良い印象を持たれる努力ができるか'},
+      {no:'3', title:'身だしなみ', purpose:'客観視・良い印象を持たれる努力ができるか'},
+      {no:'4', title:'傾聴態度', purpose:'手・首の動き、癖、目の動きなど'},
+      {no:'5', title:'礼儀作法', purpose:'お辞儀・挨拶ができるか'},
+    ]},
+    {group:'主体性・説明力確認', color:'#7B61FF', tag:'本気度・スキル', items:[
+      {no:'6', title:'会社説明動画の感想', purpose:'就活への本気度・主体性の確認'},
+      {no:'7', title:'動画以外の事前準備（HP・SNS等）', purpose:'就活への本気度・主体性の確認'},
+      {no:'8', title:'自己紹介', purpose:'説明力の確認'},
+      {no:'9', title:'業務経験', purpose:'説明力 / 業務理解・スキル適性確認'},
+      {no:'10', title:'PCスキル', purpose:'Excel / Word / PPT / メール / その他'},
+    ]},
+    {group:'稼働・適性確認', color:'#FFE66D', tag:'CREDO・環境理解', items:[
+      {no:'11', title:'退職理由', purpose:'突発性・他責思考・継続力の確認'},
+      {no:'12', title:'長所 / 短所', purpose:'稼働イメージを持つ（CREDOのイメージ）'},
+      {no:'13', title:'苦手な上司との付き合い方', purpose:'稼働イメージを持つ（CREDOのイメージ）'},
+      {no:'14', title:'自身にとって仕事とは？', purpose:'稼働イメージを持つ（CREDOのイメージ）'},
+      {no:'15', title:'組織（チーム）での業務経験の有無', purpose:'稼働イメージを持つ（CREDOのイメージ）'},
+      {no:'19', title:'常駐勤務のメリット', purpose:'稼働のイメージを持たせる / 入社後ギャップ対策'},
+      {no:'20', title:'常駐勤務のデメリット', purpose:'稼働のイメージを持たせる / 入社後ギャップ対策'},
+      {no:'21', title:'シフト制勤務の理解度', purpose:'稼働のイメージを持たせる / 入社後ギャップ対策'},
+      {no:'22', title:'夜勤の理解度', purpose:'稼働のイメージを持たせる / 入社後ギャップ対策'},
+      {no:'23', title:'業務内容の理解度', purpose:'稼働のイメージを持たせる / 入社後ギャップ対策'},
+    ]},
+    {group:'意欲・採用条件確認', color:'#43E97B', tag:'条件・リスク', items:[
+      {no:'16', title:'ITエンジニアの志望動機', purpose:'意欲・主体性の確認'},
+      {no:'17', title:'GOOYAの志望動機 / 選社基準', purpose:'意欲・主体性の確認'},
+      {no:'18', title:'夢・目標 / それに向けた取り組み', purpose:'目的意識・行動が伴っているか'},
+      {no:'24', title:'他社選考状況', purpose:'勤務・採用条件の確認'},
+      {no:'25', title:'シフト / 夜勤の可否', purpose:'経験も含めて確認'},
+      {no:'26', title:'入社希望月 / 退職状況', purpose:'勤務・採用条件の確認'},
+      {no:'27', title:'現年収 / 希望年収', purpose:'勤務・採用条件の確認'},
+      {no:'28', title:'通勤（最寄駅・徒歩・移動手段）', purpose:'バス代支給条件・想定通勤時間'},
+      {no:'29', title:'既往歴（病歴・通院・服薬状況）', purpose:'早期退職リスクの確認'},
+      {no:'30', title:'入社遅延の懸念', purpose:'退職交渉・家庭事情など'},
+    ]},
+  ],
+  screening: {
+    updated: '2025/12/02',
+    a: ['32歳以下','高卒以上（高卒認定可）','社会人経験1年以上 ／ アルバイトのみ可','同年新卒の1年以内可（※高卒18歳NG・専門卒20歳以上）','仕事でMicrosoft Officeを使ったことがある','半年以下の離職が複数回続いていない','転職回数5回以下（GOOYAが6社目、年齢勘案）','業務委託就業可（直接雇用経験必須）'],
+    b: ['事務経験1年以上 / ExcelのC複雑な関数が使える','コールセンター経験が半年以上','IT系の資格を保有している','IT系スクールに通った実績がある','派遣社員のため転職回数が多い'],
+    ng: ['IT業界経験のない外国籍の方','経験問わず45歳以上の方','IT業界経験のない30歳以上の方','直近1年以上ブランク（合理的な理由なし）','1年以上無職（海外留学・職能訓練などは考慮）','渋谷・新宿・大手町起点で定期代3万円以上 or 1.5h以上'],
+    salary: {
+      agt: {inexperienced:'月給 25万円〜35万円', experienced:'月給 33万円〜66万円'},
+      media: {inexperienced:'月給 27万円〜35万円', experienced:'月給 35万円〜66万円'},
+    }
+  },
+  shapo: {
+    holders: ['山口部長','山口（介）','柳沼さん'],
+    apply_note: 'back_log・情シス（常原愛さん）へ申請。申請通過時、個人チャット宛にID/PWが届く',
+    flows: [
+      {type:'社外が絡む内容', color:'#00F5D4', example:'外部メディア掲載記事の紹介など', action:'徳永さんに最終確認していただく'},
+      {type:'社内のみで完結する内容', color:'#43E97B', example:'入社前懇親会・交流会・勉強会・特別表彰など', action:'山口部長・山口（介）にて最終確認、入稿OK'},
+    ],
+    notes: [
+      {title:'オフィシャルなコンテンツ', color:'#FF6B6B', desc:'社内報は代表・役員も閲覧されます。写真・文体など、ふさわしいレベルで仕上げましょう。'},
+      {title:'社内外の整合性', color:'#FFE66D', desc:'社内報／社外報は整合性が大切です。社内外への発信内容が一貫性あるもの、情報の相違がないか要確認。'},
+      {title:'読者を意識したクオリティ', color:'#43E97B', desc:'デザインにも気を配り、読者が「おもしろい、また読みたい」と思えるクオリティを意識しましょう。'},
+    ]
+  },
+  media: [
+    {name:'DODA', color:'#00F5D4', notes:'媒体上で書類回収・予約配信あり'},
+    {name:'engage', color:'#7B61FF', notes:'媒体上で書類回収・予約配信なし'},
+    {name:'女の転職', color:'#F8A5C2', notes:'予約配信あるが翌日10時送付'},
+    {name:'Wantedly', color:'#43E97B', notes:'応募要件に当てはまらない場合、未連絡でOK。HRMOSの登録/辞退処理'},
+    {name:'ハローワーク', color:'#FFE66D', notes:'HWシステム上の対応は書類送付連絡と合否操作のみ。Gmailで履歴書回収後HRMOSでやり取り。応募時に求人番号下4桁をラベル付け。求人更新3ヶ月ごと'},
+    {name:'HIKOMA', color:'#FF9F43', notes:'Gmailで履歴書回収後HRMOSでやり取り'},
+  ],
+  tasks: [
+    {name:'金子さん', color:'#00F5D4', tasks:['全体定常のフォロー'], self:['入社前研修の棚卸']},
+    {name:'神さん', color:'#7B61FF', tasks:['数字出し：月・金','内定通知書作成','Gmail・LINE漏れ確認','面接結果確認'], self:['契約対応']},
+    {name:'安達さん', color:'#FF6B6B', tasks:['PF：ー（復帰次第circus）','媒体：DODA・ハロワ','与信反社確認【1h】：火','インポート業務：火・木','翌日面接確認：木・金','日程調整催促：月','スキルシート依頼漏れ確認'], self:['X運用（公式・個人）','TikTok運用']},
+    {name:'西谷地さん', color:'#FFE66D', tasks:['PF：ー','媒体：engage','与信反社確認【1h】：月','インポート業務：できるようになってから','翌日面接確認：火・水','日程調整催促：水','スキルシート依頼漏れ確認'], self:['労務対応','X運用（公式・個人）','TikTok運用']},
+    {name:'鎌田さん', color:'#43E97B', tasks:['PF：AgentAccess（神・廣岡）','媒体：Wantedly','与信反社確認【1h】：水・金','インポート業務：月','日程調整催促：金','スキルシート依頼漏れ確認'], self:[]},
+    {name:'間宮さん', color:'#F8A5C2', tasks:['PF：CrowdAgent','媒体：女の転職・HIKOMA','与信反社確認【1h】：木','インポート業務：水・金','翌日面接確認：月','日程調整管理：火・木','スキルシート依頼漏れ確認'], self:['支払い申請：月末・月初','Wantedly・公式LINEの画像編集','業務改善提案','201・301申請']},
+  ],
+};
+
+let WIKI = JSON.parse(JSON.stringify(DEFAULT_WIKI));
+
+function loadWikiData(){
+  try {
+    const saved = localStorage.getItem('ro_wiki');
+    if(saved) WIKI = JSON.parse(saved);
+  } catch(e){}
+}
+
+function saveWikiData(){
+  try { localStorage.setItem('ro_wiki', JSON.stringify(WIKI)); } catch(e){}
+  const t = document.getElementById('wiki-toast');
+  t.style.display = 'block';
+  setTimeout(()=> t.style.display = 'none', 2500);
+}
+
+function toggleWikiEdit(){
+  wikiEditMode = !wikiEditMode;
+  const btn = document.getElementById('wiki-edit-btn');
+  btn.textContent = wikiEditMode ? '✓ 保存する' : '✎ 編集モード';
+  btn.className = `btn ${wikiEditMode ? 'btn-outline-red' : 'btn-outline-cyan'}`;
+  if(!wikiEditMode) saveWikiData();
+  renderCurrentWikiTab();
+}
+
+let currentWikiTab = 'interview-tab';
+
+function setWikiTab(tab, el){
+  document.querySelectorAll('#wiki-tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  currentWikiTab = tab;
+  ['interview-tab','screening-tab','shapo-tab','media-tab','tasks-tab'].forEach(id=>{
+    document.getElementById(id).style.display = id===tab?'block':'none';
+  });
+  renderCurrentWikiTab();
+}
+
+function renderCurrentWikiTab(){
+  const map = {
+    'interview-tab': renderInterviewTab,
+    'screening-tab': renderScreeningTab,
+    'shapo-tab': renderShapoTab,
+    'media-tab': renderMediaWikiTab,
+    'tasks-tab': renderTasksTab,
+  };
+  if(map[currentWikiTab]) map[currentWikiTab]();
+}
+
+function renderWiki(){
+  loadWikiData();
+  renderInterviewTab();
+}
+
+// ---- HELPERS ----
+const E = wikiEditMode;
+function inp(val, onchange, style=''){
+  return `<input class="input-field" value="${val.replace(/"/g,'&quot;')}" oninput="${onchange}" style="${style}">`;
+}
+function textarea(val, onchange){
+  return `<textarea class="input-field" oninput="${onchange}" style="resize:vertical;min-height:60px;width:100%">${val}</textarea>`;
+}
+function addBtn(onclick, label='＋ 追加'){
+  return `<button onclick="${onclick}" style="background:transparent;border:1px dashed var(--border);color:var(--t2);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:.75rem;width:100%;margin-top:8px;transition:all .2s" onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t2)'">${label}</button>`;
+}
+function delBtn(onclick){
+  return `<button onclick="${onclick}" class="del-btn" title="削除">×</button>`;
+}
+
+// ---- INTERVIEW TAB ----
+function renderInterviewTab(){
+  const tab = document.getElementById('interview-tab');
+  if(wikiEditMode){
+    tab.innerHTML = WIKI.interview.map((grp, gi)=>`
+      <div class="card" style="margin-bottom:16px;border-left:3px solid ${grp.color}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="display:flex;gap:10px;align-items:center;flex:1">
+            <div style="width:4px;height:18px;background:${grp.color};border-radius:2px;flex-shrink:0"></div>
+            <input class="input-field" value="${grp.group}" oninput="WIKI.interview[${gi}].group=this.value" style="max-width:200px;font-weight:700">
+            <input class="input-field" value="${grp.tag}" oninput="WIKI.interview[${gi}].tag=this.value" style="max-width:140px;font-size:.72rem;color:var(--t2)">
+          </div>
+          ${delBtn(`deleteInterviewGroup(${gi})`)}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px" id="igrp-${gi}">
+          ${grp.items.map((item, ii)=>`
+            <div style="background:var(--bg2);border-radius:7px;padding:9px 12px;display:flex;gap:8px;align-items:center">
+              <input class="input-field" value="${item.no}" oninput="WIKI.interview[${gi}].items[${ii}].no=this.value" style="width:36px;text-align:center;flex-shrink:0;color:${grp.color}">
+              <input class="input-field" value="${item.title}" oninput="WIKI.interview[${gi}].items[${ii}].title=this.value" style="flex:1">
+              <input class="input-field" value="${item.purpose}" oninput="WIKI.interview[${gi}].items[${ii}].purpose=this.value" style="flex:1;color:var(--t2)">
+              ${delBtn(`deleteInterviewItem(${gi},${ii})`)}
+            </div>`).join('')}
+        </div>
+        ${addBtn(`addInterviewItem(${gi})`, '＋ 項目を追加')}
+      </div>`).join('') +
+      addBtn('addInterviewGroup()', '＋ グループを追加');
+  } else {
+    tab.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">` +
+      WIKI.interview.map(grp=>`
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <div style="width:4px;height:18px;background:${grp.color};border-radius:2px"></div>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem">${grp.group}</span>
+            <span style="background:${grp.color}18;color:${grp.color};font-size:.62rem;font-family:'Space Mono',monospace;padding:2px 8px;border-radius:4px">${grp.tag}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            ${grp.items.map(item=>`
+              <div style="background:var(--bg2);border-radius:7px;padding:10px 13px;display:flex;gap:12px;align-items:flex-start">
+                <span style="color:${grp.color};font-family:'Space Mono',monospace;font-size:.65rem;min-width:20px;margin-top:2px">${item.no}</span>
+                <div>
+                  <div style="color:var(--t1);font-size:.82rem;font-weight:500;margin-bottom:2px">${item.title}</div>
+                  <div style="color:var(--t2);font-size:.72rem">${item.purpose}</div>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>`).join('') +
+    `</div>`;
+  }
+}
+function addInterviewGroup(){
+  WIKI.interview.push({group:'新しいグループ',color:'#00F5D4',tag:'タグ',items:[]});
+  renderInterviewTab();
+}
+function deleteInterviewGroup(gi){ WIKI.interview.splice(gi,1); renderInterviewTab(); }
+function addInterviewItem(gi){
+  WIKI.interview[gi].items.push({no:String(WIKI.interview[gi].items.length+1),title:'新しい項目',purpose:'目的を入力'});
+  renderInterviewTab();
+}
+function deleteInterviewItem(gi,ii){ WIKI.interview[gi].items.splice(ii,1); renderInterviewTab(); }
+
+// ---- SCREENING TAB ----
+function renderScreeningTab(){
+  const tab = document.getElementById('screening-tab');
+  const s = WIKI.screening;
+  if(wikiEditMode){
+    const renderList = (arr, key, color, marker) =>
+      arr.map((t,i)=>`
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+          <span style="color:${color};flex-shrink:0">${marker}</span>
+          <input class="input-field" value="${t}" oninput="WIKI.screening.${key}[${i}]=this.value" style="flex:1">
+          ${delBtn(`WIKI.screening.${key}.splice(${i},1);renderScreeningTab()`)}
+        </div>`).join('') +
+      addBtn(`WIKI.screening.${key}.push('新しい項目');renderScreeningTab()`);
+
+    tab.innerHTML = `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:var(--t2);font-size:.75rem">最終更新日：</span>
+          <input class="input-field" value="${s.updated}" oninput="WIKI.screening.updated=this.value" style="width:130px">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:18px">
+        <div class="card" style="border-color:rgba(0,245,212,.3)">
+          <div style="color:var(--cyan);font-weight:700;margin-bottom:12px">A評価（採用推奨）</div>
+          ${renderList(s.a,'a','#00F5D4','✓')}
+        </div>
+        <div class="card" style="border-color:rgba(255,230,109,.3)">
+          <div style="color:var(--yellow);font-weight:700;margin-bottom:12px">B評価（要検討）</div>
+          ${renderList(s.b,'b','#FFE66D','△')}
+        </div>
+        <div class="card" style="border-color:rgba(255,107,107,.3)">
+          <div style="color:var(--red);font-weight:700;margin-bottom:12px">NG（不採用）</div>
+          ${renderList(s.ng,'ng','#FF6B6B','✕')}
+        </div>
+      </div>
+      <div class="card">
+        <div style="color:var(--t2);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:14px">給与条件</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div style="background:var(--bg2);border-radius:8px;padding:14px;border-left:3px solid var(--purple)">
+            <div style="color:var(--purple);font-size:.65rem;font-family:'Space Mono',monospace;margin-bottom:10px">AGT展開用</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;gap:8px;align-items:center"><span style="color:var(--t2);font-size:.75rem;width:50px">未経験</span><input class="input-field" value="${s.salary.agt.inexperienced}" oninput="WIKI.screening.salary.agt.inexperienced=this.value" style="flex:1"></div>
+              <div style="display:flex;gap:8px;align-items:center"><span style="color:var(--t2);font-size:.75rem;width:50px">経験者</span><input class="input-field" value="${s.salary.agt.experienced}" oninput="WIKI.screening.salary.agt.experienced=this.value" style="flex:1"></div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border-radius:8px;padding:14px;border-left:3px solid var(--cyan)">
+            <div style="color:var(--cyan);font-size:.65rem;font-family:'Space Mono',monospace;margin-bottom:10px">媒体掲載用</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;gap:8px;align-items:center"><span style="color:var(--t2);font-size:.75rem;width:50px">未経験</span><input class="input-field" value="${s.salary.media.inexperienced}" oninput="WIKI.screening.salary.media.inexperienced=this.value" style="flex:1"></div>
+              <div style="display:flex;gap:8px;align-items:center"><span style="color:var(--t2);font-size:.75rem;width:50px">経験者</span><input class="input-field" value="${s.salary.media.experienced}" oninput="WIKI.screening.salary.media.experienced=this.value" style="flex:1"></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    const renderListView = (arr, color, marker) => arr.map(t=>`
+      <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px">
+        <span style="color:${color};flex-shrink:0;margin-top:1px">${marker}</span>
+        <span style="color:var(--t1);font-size:.78rem;line-height:1.5">${t}</span>
+      </div>`).join('');
+    tab.innerHTML = `
+      <div style="color:var(--t3);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:8px">最終更新：${s.updated}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:18px">
+        <div class="card" style="border-color:rgba(0,245,212,.3)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <div style="width:28px;height:28px;border-radius:50%;background:rgba(0,245,212,.15);border:1px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;color:var(--cyan);font-size:.9rem">A</div>
+            <span style="color:var(--cyan);font-weight:700;font-size:.9rem">A評価（採用推奨）</span>
+          </div>
+          ${renderListView(s.a,'#00F5D4','✓')}
+        </div>
+        <div class="card" style="border-color:rgba(255,230,109,.3)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,230,109,.15);border:1px solid var(--yellow);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;color:var(--yellow);font-size:.9rem">B</div>
+            <span style="color:var(--yellow);font-weight:700;font-size:.9rem">B評価（要検討）</span>
+          </div>
+          <div style="color:var(--t2);font-size:.73rem;margin-bottom:8px">A基準を一つでも満たさないが、検討の余地あり</div>
+          ${renderListView(s.b,'#FFE66D','△')}
+        </div>
+        <div class="card" style="border-color:rgba(255,107,107,.3)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,107,107,.15);border:1px solid var(--red);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;color:var(--red);font-size:.85rem">NG</div>
+            <span style="color:var(--red);font-weight:700;font-size:.9rem">NG（不採用）</span>
+          </div>
+          ${renderListView(s.ng,'#FF6B6B','✕')}
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <div style="width:4px;height:18px;background:var(--orange);border-radius:2px"></div>
+          <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem">給与条件</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div style="background:var(--bg2);border-radius:8px;padding:14px 18px;border-left:3px solid var(--purple)">
+            <div style="color:var(--purple);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:10px">AGT展開用</div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--t2);font-size:.78rem">未経験</span><span style="color:var(--t1);font-family:'Space Mono',monospace;font-size:.8rem;font-weight:700">${s.salary.agt.inexperienced}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--t2);font-size:.78rem">経験者</span><span style="color:var(--cyan);font-family:'Space Mono',monospace;font-size:.8rem;font-weight:700">${s.salary.agt.experienced}</span></div>
+          </div>
+          <div style="background:var(--bg2);border-radius:8px;padding:14px 18px;border-left:3px solid var(--cyan)">
+            <div style="color:var(--cyan);font-family:'Space Mono',monospace;font-size:.65rem;margin-bottom:10px">媒体掲載用</div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:var(--t2);font-size:.78rem">未経験</span><span style="color:var(--t1);font-family:'Space Mono',monospace;font-size:.8rem;font-weight:700">${s.salary.media.inexperienced}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--t2);font-size:.78rem">経験者</span><span style="color:var(--cyan);font-family:'Space Mono',monospace;font-size:.8rem;font-weight:700">${s.salary.media.experienced}</span></div>
+          </div>
+        </div>
+      </div>`;
+  }
+}
+
+// ---- SHAPO TAB ----
+function renderShapoTab(){
+  const tab = document.getElementById('shapo-tab');
+  const s = WIKI.shapo;
+  if(wikiEditMode){
+    tab.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="card" style="border-color:rgba(123,97,255,.3)">
+            <div style="color:var(--purple);font-weight:700;margin-bottom:12px">投稿権限者</div>
+            ${s.holders.map((h,i)=>`<div style="display:flex;gap:6px;margin-bottom:6px">
+              <input class="input-field" value="${h}" oninput="WIKI.shapo.holders[${i}]=this.value" style="flex:1">
+              ${delBtn(`WIKI.shapo.holders.splice(${i},1);renderShapoTab()`)}
+            </div>`).join('')}
+            ${addBtn(`WIKI.shapo.holders.push('新しい担当者');renderShapoTab()`)}
+            <div style="margin-top:12px">
+              <div class="input-label" style="margin-bottom:4px">申請方法</div>
+              <textarea class="input-field" oninput="WIKI.shapo.apply_note=this.value" style="resize:vertical;min-height:50px;width:100%">${s.apply_note}</textarea>
+            </div>
+          </div>
+          <div class="card">
+            <div style="color:var(--cyan);font-weight:700;margin-bottom:12px">確認フロー</div>
+            ${s.flows.map((f,i)=>`<div style="background:var(--bg2);border-radius:7px;padding:10px;margin-bottom:8px;border-left:3px solid ${f.color}">
+              <input class="input-field" value="${f.type}" oninput="WIKI.shapo.flows[${i}].type=this.value" style="margin-bottom:6px">
+              <input class="input-field" value="${f.example}" oninput="WIKI.shapo.flows[${i}].example=this.value" placeholder="例" style="margin-bottom:6px;color:var(--t2)">
+              <input class="input-field" value="${f.action}" oninput="WIKI.shapo.flows[${i}].action=this.value" placeholder="アクション">
+            </div>`).join('')}
+          </div>
+        </div>
+        <div class="card">
+          <div style="color:var(--red);font-weight:700;margin-bottom:12px">注意事項</div>
+          ${s.notes.map((n,i)=>`<div style="background:var(--bg2);border-radius:7px;padding:10px;margin-bottom:8px">
+            <div style="display:flex;gap:6px;margin-bottom:6px">
+              <input class="input-field" value="${n.title}" oninput="WIKI.shapo.notes[${i}].title=this.value" style="flex:1;font-weight:600">
+              ${delBtn(`WIKI.shapo.notes.splice(${i},1);renderShapoTab()`)}
+            </div>
+            <textarea class="input-field" oninput="WIKI.shapo.notes[${i}].desc=this.value" style="resize:vertical;min-height:50px;width:100%">${n.desc}</textarea>
+          </div>`).join('')}
+          ${addBtn(`WIKI.shapo.notes.push({title:'新しい注意事項',color:'#FF6B6B',desc:'内容を入力'});renderShapoTab()`)}
+        </div>
+      </div>`;
+  } else {
+    tab.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="card" style="border-color:rgba(123,97,255,.3)">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <div style="width:4px;height:18px;background:var(--purple);border-radius:2px"></div>
+              <span style="font-family:'Syne',sans-serif;font-weight:700">投稿権限について</span>
+              <span style="background:rgba(123,97,255,.1);color:var(--purple);font-size:.62rem;font-family:'Space Mono',monospace;padding:2px 8px;border-radius:4px">2024/10/31時点</span>
+            </div>
+            <div style="background:var(--bg2);border-radius:7px;padding:12px;margin-bottom:10px">
+              <div style="color:var(--t2);font-size:.73rem;margin-bottom:6px">g-share 投稿権限保有者</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">${s.holders.map(h=>`<span style="background:rgba(123,97,255,.1);color:var(--purple);padding:3px 10px;border-radius:4px;font-size:.78rem;font-weight:600">${h}</span>`).join('')}</div>
+            </div>
+            <div style="background:rgba(255,230,109,.05);border:1px solid rgba(255,230,109,.2);border-radius:7px;padding:10px">
+              <div style="color:var(--yellow);font-size:.72rem;font-weight:600;margin-bottom:4px">⚠ 権限付与の申請方法</div>
+              <div style="color:var(--t2);font-size:.75rem;line-height:1.6">${s.apply_note}</div>
+            </div>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <div style="width:4px;height:18px;background:var(--cyan);border-radius:2px"></div>
+              <span style="font-family:'Syne',sans-serif;font-weight:700">入稿前の確認フロー</span>
+            </div>
+            ${s.flows.map(f=>`<div style="background:var(--bg2);border-radius:7px;padding:12px;border-left:3px solid ${f.color};margin-bottom:8px">
+              <div style="color:${f.color};font-size:.73rem;font-weight:600;margin-bottom:4px">${f.type}</div>
+              <div style="color:var(--t2);font-size:.75rem;line-height:1.6">${f.example}<br>→ <span style="color:var(--t1)">${f.action}</span></div>
+            </div>`).join('')}
+          </div>
+        </div>
+        <div class="card" style="border-color:rgba(255,107,107,.2)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <div style="width:4px;height:18px;background:var(--red);border-radius:2px"></div>
+            <span style="font-family:'Syne',sans-serif;font-weight:700">注意事項</span>
+          </div>
+          ${s.notes.map(n=>`<div style="background:var(--bg2);border-radius:7px;padding:12px;margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+              <div style="width:6px;height:6px;border-radius:50%;background:${n.color}"></div>
+              <span style="color:${n.color};font-size:.78rem;font-weight:600">${n.title}</span>
+            </div>
+            <div style="color:var(--t2);font-size:.75rem;line-height:1.6">${n.desc}</div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+  }
+}
+
+// ---- MEDIA WIKI TAB ----
+function renderMediaWikiTab(){
+  const tab = document.getElementById('media-tab');
+  const m = WIKI.media;
+  if(wikiEditMode){
+    tab.innerHTML = m.map((item,i)=>`
+      <div class="card" style="margin-bottom:12px;border-left:3px solid ${item.color}">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
+          <input class="input-field" value="${item.name}" oninput="WIKI.media[${i}].name=this.value" style="max-width:130px;font-weight:700;color:${item.color}">
+          <input class="input-field" value="${item.color}" oninput="WIKI.media[${i}].color=this.value;renderMediaWikiTab()" style="max-width:90px;font-family:'Space Mono',monospace;font-size:.72rem">
+          ${delBtn(`WIKI.media.splice(${i},1);renderMediaWikiTab()`)}
+        </div>
+        <textarea class="input-field" oninput="WIKI.media[${i}].notes=this.value" style="resize:vertical;min-height:60px;width:100%">${item.notes}</textarea>
+      </div>`).join('') +
+    addBtn(`WIKI.media.push({name:'新規媒体',color:'#00F5D4',notes:''});renderMediaWikiTab()`);
+  } else {
+    tab.innerHTML = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">` +
+      m.map(item=>`
+        <div class="card" style="border-left:3px solid ${item.color}">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <div style="width:8px;height:8px;border-radius:50%;background:${item.color}"></div>
+            <span style="color:${item.color};font-weight:700;font-size:.9rem">${item.name}</span>
+          </div>
+          <div style="color:var(--t2);font-size:.76rem;line-height:1.7">${item.notes}</div>
+        </div>`).join('') +
+    `</div>`;
+  }
+}
+
+// ---- TASKS TAB ----
+function renderTasksTab(){
+  const tab = document.getElementById('tasks-tab');
+  const p = WIKI.tasks;
+  if(wikiEditMode){
+    tab.innerHTML = p.map((person,pi)=>`
+      <div class="card" style="margin-bottom:14px;border-top:2px solid ${person.color}">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px">
+          <div style="width:30px;height:30px;border-radius:50%;background:${person.color};color:#070B14;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0">${person.name.slice(0,2)}</div>
+          <input class="input-field" value="${person.name}" oninput="WIKI.tasks[${pi}].name=this.value;renderTasksTab()" style="max-width:140px;font-weight:700;color:${person.color}">
+          <input class="input-field" value="${person.color}" oninput="WIKI.tasks[${pi}].color=this.value;renderTasksTab()" style="max-width:90px;font-family:'Space Mono',monospace;font-size:.72rem">
+          ${delBtn(`WIKI.tasks.splice(${pi},1);renderTasksTab()`)}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div>
+            <div class="input-label" style="margin-bottom:6px">通常タスク</div>
+            ${person.tasks.map((t,ti)=>`<div style="display:flex;gap:6px;margin-bottom:5px">
+              <input class="input-field" value="${t}" oninput="WIKI.tasks[${pi}].tasks[${ti}]=this.value" style="flex:1">
+              ${delBtn(`WIKI.tasks[${pi}].tasks.splice(${ti},1);renderTasksTab()`)}
+            </div>`).join('')}
+            ${addBtn(`WIKI.tasks[${pi}].tasks.push('新しいタスク');renderTasksTab()`, '＋ タスク追加')}
+          </div>
+          <div>
+            <div class="input-label" style="margin-bottom:6px">自タスク</div>
+            ${person.self.map((t,ti)=>`<div style="display:flex;gap:6px;margin-bottom:5px">
+              <input class="input-field" value="${t}" oninput="WIKI.tasks[${pi}].self[${ti}]=this.value" style="flex:1">
+              ${delBtn(`WIKI.tasks[${pi}].self.splice(${ti},1);renderTasksTab()`)}
+            </div>`).join('')}
+            ${addBtn(`WIKI.tasks[${pi}].self.push('新しいタスク');renderTasksTab()`, '＋ タスク追加')}
+          </div>
+        </div>
+      </div>`).join('') +
+    addBtn(`WIKI.tasks.push({name:'新しい担当者',color:'#00F5D4',tasks:[],self:[]});renderTasksTab()`, '＋ 担当者を追加');
+  } else {
+    tab.innerHTML = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">` +
+      p.map(person=>`
+        <div class="card" style="border-top:2px solid ${person.color}">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <div style="width:30px;height:30px;border-radius:50%;background:${person.color};color:#070B14;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700">${person.name.slice(0,2)}</div>
+            <span style="color:${person.color};font-weight:700;font-size:.88rem">${person.name}</span>
+          </div>
+          ${person.tasks.length?`<div style="margin-bottom:10px"><div style="color:var(--t3);font-family:'Space Mono',monospace;font-size:.6rem;margin-bottom:6px">通常タスク</div>${person.tasks.map(t=>`<div style="display:flex;gap:6px;margin-bottom:3px"><span style="color:${person.color};font-size:.7rem">›</span><span style="color:var(--t2);font-size:.75rem">${t}</span></div>`).join('')}</div>`:''}
+          ${person.self.length?`<div style="border-top:1px solid var(--border);padding-top:9px"><div style="color:var(--t3);font-family:'Space Mono',monospace;font-size:.6rem;margin-bottom:6px">自タスク</div>${person.self.map(t=>`<div style="display:flex;gap:6px;margin-bottom:3px"><span style="color:var(--purple);font-size:.7rem">›</span><span style="color:var(--t2);font-size:.75rem">${t}</span></div>`).join('')}</div>`:'' }
+        </div>`).join('') +
+    `</div>`;
+  }
+}
+
 // ========== INIT ==========
+loadSavedData();
+loadWikiData();
 renderDashboard();
+
+// ========== INPUT PAGE ==========
+
+// Load data from localStorage on startup
+function loadSavedData(){
+  try {
+    const m = localStorage.getItem('ro_monthly');
+    if(m){ const d=JSON.parse(m); MONTHLY.splice(0,MONTHLY.length,...d); }
+    const mt = localStorage.getItem('ro_monthly_target');
+    if(mt){ const d=JSON.parse(mt); MONTHLY_TARGET.splice(0,MONTHLY_TARGET.length,...d); }
+    const q = localStorage.getItem('ro_media');
+    if(q){ const d=JSON.parse(q); MEDIA.splice(0,MEDIA.length,...d); }
+    const b = localStorage.getItem('ro_budget');
+    if(b){ const d=JSON.parse(b); BUDGET_ITEMS.splice(0,BUDGET_ITEMS.length,...d); }
+    const iv = localStorage.getItem('ro_interviewers');
+    if(iv){ const d=JSON.parse(iv); INTERVIEWERS.splice(0,INTERVIEWERS.length,...d); }
+  } catch(e){ console.warn('Load error',e); }
+}
+
+function showToast(){
+  const t=document.getElementById('save-toast');
+  t.style.display='block';
+  setTimeout(()=>t.style.display='none',2500);
+}
+
+function setInputTab(tab, el){
+  document.querySelectorAll('#input-tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['monthly-input','media-input','budget-input','interviewer-input'].forEach(id=>{
+    document.getElementById(id).style.display = id===tab?'block':'none';
+  });
+  if(tab==='monthly-input') renderMonthlyInput();
+  if(tab==='media-input') renderMediaInput();
+  if(tab==='budget-input') renderBudgetInputRows();
+  if(tab==='interviewer-input') renderIVInput();
+}
+
+// ---- MONTHLY INPUT ----
+function renderMonthlyInput(){
+  const head = document.getElementById('monthly-input-head');
+  const body = document.getElementById('monthly-input-body');
+  const keys = ['applications','documentPass','firstInterview','firstPass','secondInterview','secondPass','offers','acceptances'];
+  const labels = ['応募数','書類通過数','一次面接実施数','一次通過数','二次面接実施数','二次通過数','内定数','承諾数'];
+  const colors = ['#00F5D4','#7B61FF','#FF6B6B','#FFE66D','#F8A5C2','#43E97B','#4ECDC4','#FF9F43'];
+
+  // Header
+  head.innerHTML = `
+    <th style="text-align:left;color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem;padding:8px 10px;border-bottom:1px solid var(--border)">月</th>
+    <th style="color:var(--t3);font-family:'Space Mono',monospace;font-size:.62rem;padding:8px 10px;border-bottom:1px solid var(--border)">種別</th>
+    ${labels.map((l,i)=>`<th style="text-align:right;color:${colors[i]};font-family:'Space Mono',monospace;font-size:.62rem;padding:8px 6px;border-bottom:1px solid var(--border)">${l}</th>`).join('')}
+  `;
+
+  // Body: 2 rows per month (目標・実績)
+  body.innerHTML = MONTHLY.map((row,i)=>`
+    <tr style="border-top:2px solid var(--border)">
+      <td rowspan="2" style="padding:6px 10px;color:var(--t2);font-family:'Space Mono',monospace;font-size:.72rem;vertical-align:middle;border-right:1px solid var(--border)">${row.month}</td>
+      <td style="padding:4px 8px">
+        <span style="background:rgba(123,97,255,.12);color:var(--purple);font-family:'Space Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:3px;white-space:nowrap">目標</span>
+      </td>
+      ${keys.map(k=>`
+        <td style="padding:3px 4px">
+          <input class="input-field" style="text-align:right;width:76px;border-color:rgba(123,97,255,.3);color:var(--purple)" type="number" min="0"
+            value="${MONTHLY_TARGET[i][k]}"
+            oninput="MONTHLY_TARGET[${i}]['${k}']=Number(this.value)||0">
+        </td>`).join('')}
+    </tr>
+    <tr>
+      <td style="padding:4px 8px;border-bottom:1px solid var(--border)">
+        <span style="background:rgba(0,245,212,.1);color:var(--cyan);font-family:'Space Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:3px;white-space:nowrap">実績</span>
+      </td>
+      ${keys.map(k=>`
+        <td style="padding:3px 4px;border-bottom:1px solid var(--border)">
+          <input class="input-field" style="text-align:right;width:76px;border-color:rgba(0,245,212,.2)" type="number" min="0"
+            value="${row[k]}"
+            oninput="MONTHLY[${i}]['${k}']=Number(this.value)||0">
+        </td>`).join('')}
+    </tr>`).join('');
+}
+
+function saveMonthly(){
+  const months = MONTHLY;
+  QUARTERLY[0] = calcQuarter('1Q(10-12月)', months.slice(6,9));
+  QUARTERLY[1] = calcQuarter('2Q(1-3月)',  months.slice(9,12));
+  QUARTERLY[2] = calcQuarter('3Q(4-6月)',  months.slice(0,3));
+  QUARTERLY[3] = calcQuarter('4Q(7-9月)',  months.slice(3,6));
+  try{ localStorage.setItem('ro_monthly', JSON.stringify(MONTHLY)); } catch(e){}
+  try{ localStorage.setItem('ro_monthly_target', JSON.stringify(MONTHLY_TARGET)); } catch(e){}
+  showToast();
+  renderDashboard();
+}
+
+function calcQuarter(label, months){
+  const q = {month:label};
+  ['applications','documentPass','firstInterview','firstPass','secondInterview','secondPass','offers','acceptances'].forEach(k=>{
+    q[k] = months.reduce((s,m)=>s+(m[k]||0),0);
+  });
+  return q;
+}
+
+// ---- MEDIA INPUT ----
+const IV_COLORS = ['#00F5D4','#7B61FF','#FF6B6B','#FFE66D','#43E97B','#F8A5C2','#FF9F43','#4ECDC4'];
+
+function renderMediaInput(){
+  document.getElementById('media-input-cards').innerHTML = MEDIA.map((m,i)=>`
+    <div class="media-input-card" style="border-left:3px solid ${m.color}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:10px;height:10px;border-radius:50%;background:${m.color}"></div>
+          <input class="input-field" style="width:160px;font-size:.8rem;font-weight:600" value="${m.name}"
+            oninput="MEDIA[${i}].name=this.value">
+          <input class="input-field" style="width:130px;font-size:.72rem;color:var(--t2)" value="${m.type}"
+            oninput="MEDIA[${i}].type=this.value" placeholder="タイプ">
+        </div>
+        <button class="del-btn" onclick="deleteMedia(${i})">×</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px">
+        <div class="input-group"><div class="input-label">予算(円)</div><input class="input-field" type="number" value="${m.budget}" oninput="updateMedia(${i},'budget',this.value)"></div>
+        <div class="input-group"><div class="input-label">使用額(円)</div><input class="input-field" type="number" value="${m.spent}" oninput="updateMedia(${i},'spent',this.value)"></div>
+        <div class="input-group"><div class="input-label">応募数</div><input class="input-field" type="number" value="${m.applications}" oninput="updateMedia(${i},'applications',this.value)"></div>
+        <div class="input-group"><div class="input-label">書類通過率%</div><input class="input-field" type="number" step="0.1" value="${m.docRate}" oninput="updateMedia(${i},'docRate',this.value)"></div>
+        <div class="input-group"><div class="input-label">内定率%</div><input class="input-field" type="number" step="0.1" value="${m.offerRate}" oninput="updateMedia(${i},'offerRate',this.value)"></div>
+        <div class="input-group"><div class="input-label">採用数</div><input class="input-field" type="number" value="${m.hires}" oninput="updateMedia(${i},'hires',this.value)"></div>
+      </div>
+      <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:var(--card);border-radius:6px;padding:8px 12px;display:flex;justify-content:space-between">
+          <span style="color:var(--t3);font-size:.7rem">CPA（自動計算）</span>
+          <span style="color:var(--cyan);font-family:'Space Mono',monospace;font-size:.72rem" id="cpa-${i}">¥${Math.round(m.spent/(m.applications||1)).toLocaleString()}</span>
+        </div>
+        <div style="background:var(--card);border-radius:6px;padding:8px 12px;display:flex;justify-content:space-between">
+          <span style="color:var(--t3);font-size:.7rem">CPH（自動計算）</span>
+          <span style="color:var(--yellow);font-family:'Space Mono',monospace;font-size:.72rem" id="cph-${i}">¥${Math.round(m.spent/(m.hires||1)).toLocaleString()}</span>
+        </div>
+      </div>
+    </div>`).join('') +
+  `<button onclick="addMedia()" style="background:transparent;border:1px dashed var(--border);color:var(--t2);padding:9px 16px;border-radius:7px;cursor:pointer;font-size:.78rem;width:100%;transition:all .2s;margin-top:4px" onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--t2)'">＋ 媒体を追加</button>`;
+}
+
+function updateMedia(i,key,val){
+  MEDIA[i][key] = Number(val)||0;
+  MEDIA[i].cpa = Math.round(MEDIA[i].spent/(MEDIA[i].applications||1));
+  MEDIA[i].cph = Math.round(MEDIA[i].spent/(MEDIA[i].hires||1));
+  const cpaEl=document.getElementById('cpa-'+i);
+  const cphEl=document.getElementById('cph-'+i);
+  if(cpaEl) cpaEl.textContent='¥'+MEDIA[i].cpa.toLocaleString();
+  if(cphEl) cphEl.textContent='¥'+MEDIA[i].cph.toLocaleString();
+}
+
+function addMedia(){
+  const idx = MEDIA.length;
+  MEDIA.push({name:'新規媒体',type:'',color:IV_COLORS[idx%IV_COLORS.length],budget:0,spent:0,applications:0,cpa:0,docRate:0,offerRate:0,hires:0,cph:0});
+  renderMediaInput();
+}
+
+function deleteMedia(i){
+  MEDIA.splice(i,1);
+  renderMediaInput();
+}
+
+function saveMedia(){
+  try{ localStorage.setItem('ro_media', JSON.stringify(MEDIA)); } catch(e){}
+  showToast();
+  renderMedia();
+}
+
+// ---- BUDGET INPUT ----
+const BUDGET_CATS = ['求人媒体費','人材紹介費','自社採用','採用イベント','採用ツール','従業員紹介','その他'];
+
+function renderBudgetInputRows(){
+  document.getElementById('budget-input-rows').innerHTML = BUDGET_ITEMS.map((item,i)=>`
+    <div class="budget-input-row">
+      <div class="input-group">
+        ${i===0?'<div class="input-label">カテゴリ</div>':''}
+        <select class="input-field" onchange="BUDGET_ITEMS[${i}].cat=this.value">
+          ${BUDGET_CATS.map(c=>`<option value="${c}" ${item.cat===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div class="input-group">
+        ${i===0?'<div class="input-label">項目名</div>':''}
+        <input class="input-field" value="${item.sub}" oninput="BUDGET_ITEMS[${i}].sub=this.value" placeholder="項目名">
+      </div>
+      <div class="input-group">
+        ${i===0?'<div class="input-label">計画予算(円)</div>':''}
+        <input class="input-field" type="number" value="${item.planned}" oninput="BUDGET_ITEMS[${i}].planned=Number(this.value)||0" style="text-align:right">
+      </div>
+      <div class="input-group">
+        ${i===0?'<div class="input-label">実績(円)</div>':''}
+        <input class="input-field" type="number" value="${item.actual}" oninput="BUDGET_ITEMS[${i}].actual=Number(this.value)||0" style="text-align:right;border-color:rgba(0,245,212,.3)">
+      </div>
+      <div class="input-group">
+        ${i===0?'<div class="input-label">着地予測(円)</div>':''}
+        <input class="input-field" type="number" value="${item.forecast}" oninput="BUDGET_ITEMS[${i}].forecast=Number(this.value)||0" style="text-align:right;border-color:rgba(255,230,109,.3)">
+      </div>
+      <button class="del-btn" style="${i===0?'margin-top:18px':''}" onclick="deleteBudgetRow(${i})">×</button>
+    </div>`).join('');
+}
+
+function addBudgetRow(){
+  BUDGET_ITEMS.push({id:BUDGET_ITEMS.length,cat:'求人媒体費',sub:'',planned:0,actual:0,forecast:0});
+  renderBudgetInputRows();
+}
+
+function deleteBudgetRow(i){
+  BUDGET_ITEMS.splice(i,1);
+  renderBudgetInputRows();
+}
+
+function saveBudgetInput(){
+  try{ localStorage.setItem('ro_budget', JSON.stringify(BUDGET_ITEMS)); } catch(e){}
+  showToast();
+  renderBudget();
+}
+
+// ---- INTERVIEWER INPUT ----
+function renderIVInput(){
+  const keys = ['applications','documentPass','firstInterview','firstPass','secondInterview','secondPass','offers','acceptances'];
+  const labels = ['応募数','書類通過数','一次面接実施数','一次通過数','二次面接実施数','二次通過数','内定数','承諾数'];
+  const colors = ['#00F5D4','#7B61FF','#FF6B6B','#FFE66D','#F8A5C2','#43E97B','#4ECDC4','#FF9F43'];
+
+  document.getElementById('iv-input-cards').innerHTML = INTERVIEWERS.map((iv,i)=>{
+    if(!iv.target) iv.target = {applications:0,documentPass:0,firstInterview:0,firstPass:0,secondInterview:0,secondPass:0,offers:0,acceptances:0};
+    return `
+    <div class="iv-input-card" style="border-left:3px solid ${iv.color}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:50%;background:${iv.color};color:#070B14;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700">${iv.av}</div>
+          <div>
+            <input class="input-field" style="width:140px;font-size:.82rem;font-weight:600;margin-bottom:5px" value="${iv.name}" oninput="INTERVIEWERS[${i}].name=this.value;INTERVIEWERS[${i}].av=this.value.slice(0,2)">
+            <input class="input-field" style="width:140px;font-size:.72rem;color:var(--t2)" value="${iv.dept}" oninput="INTERVIEWERS[${i}].dept=this.value" placeholder="部署名">
+          </div>
+        </div>
+        <button class="del-btn" onclick="deleteIV(${i})">×</button>
+      </div>
+
+      <!-- 列ヘッダー -->
+      <div style="display:grid;grid-template-columns:60px repeat(8,1fr);gap:6px;margin-bottom:6px;padding:0 4px">
+        <div></div>
+        ${labels.map((l,ki)=>`<div style="text-align:right;color:${colors[ki]};font-family:'Space Mono',monospace;font-size:.58rem;line-height:1.3">${l}</div>`).join('')}
+      </div>
+
+      <!-- 目標行 -->
+      <div style="display:grid;grid-template-columns:60px repeat(8,1fr);gap:6px;margin-bottom:6px;align-items:center">
+        <div style="display:flex;align-items:center;justify-content:center">
+          <span style="background:rgba(123,97,255,.12);color:var(--purple);font-family:'Space Mono',monospace;font-size:.6rem;padding:3px 7px;border-radius:3px">目標</span>
+        </div>
+        ${keys.map(k=>`
+          <input class="input-field" type="number" min="0"
+            value="${iv.target[k]||0}"
+            oninput="if(!INTERVIEWERS[${i}].target)INTERVIEWERS[${i}].target={};INTERVIEWERS[${i}].target['${k}']=Number(this.value)||0"
+            style="text-align:right;padding:5px 6px;border-color:rgba(123,97,255,.3);color:var(--purple)">`).join('')}
+      </div>
+
+      <!-- 実績行 -->
+      <div style="display:grid;grid-template-columns:60px repeat(8,1fr);gap:6px;align-items:center">
+        <div style="display:flex;align-items:center;justify-content:center">
+          <span style="background:rgba(0,245,212,.1);color:var(--cyan);font-family:'Space Mono',monospace;font-size:.6rem;padding:3px 7px;border-radius:3px">実績</span>
+        </div>
+        ${keys.map(k=>`
+          <input class="input-field" type="number" min="0"
+            value="${iv[k]||0}"
+            oninput="INTERVIEWERS[${i}]['${k}']=Number(this.value)||0"
+            style="text-align:right;padding:5px 6px;border-color:rgba(0,245,212,.2)">`).join('')}
+      </div>
+
+      <!-- 達成率 -->
+      <div style="display:grid;grid-template-columns:60px repeat(8,1fr);gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);align-items:center">
+        <div style="text-align:center;color:var(--t3);font-family:'Space Mono',monospace;font-size:.58rem">達成率</div>
+        ${keys.map(k=>{
+          const actual = iv[k]||0;
+          const target = iv.target[k]||1;
+          const rate = Math.round(actual/target*100);
+          const col = rate>=100?'#43E97B':rate>=80?'#FFE66D':'#FF6B6B';
+          return `<div style="text-align:right;font-family:'Space Mono',monospace;font-size:.68rem;font-weight:700;color:${col}">${rate}%</div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addIVRow(){
+  const idx = INTERVIEWERS.length;
+  INTERVIEWERS.push({id:idx,name:'新規面接官',dept:'',av:'新規',color:IV_COLORS[idx%IV_COLORS.length],
+    applications:0,documentPass:0,firstInterview:0,firstPass:0,secondInterview:0,secondPass:0,offers:0,acceptances:0,
+    target:{applications:0,documentPass:0,firstInterview:0,firstPass:0,secondInterview:0,secondPass:0,offers:0,acceptances:0}
+  });
+  renderIVInput();
+}
+
+function deleteIV(i){
+  INTERVIEWERS.splice(i,1);
+  selectedIVs = selectedIVs.filter(id=>id<INTERVIEWERS.length);
+  if(selectedIVs.length===0) selectedIVs=[0];
+  renderIVInput();
+}
+
+function saveInterviewers(){
+  try{ localStorage.setItem('ro_interviewers', JSON.stringify(INTERVIEWERS)); } catch(e){}
+  showToast();
+  renderDashboard();
+}
+
 </script>
 </body>
 </html>
